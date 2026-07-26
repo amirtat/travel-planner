@@ -12,7 +12,10 @@
       "Bash(npx tailwindcss:*)",
       "Bash(python3 -c \"import json,sys; [print\\(f[''''path'''']\\) for f in json.load\\(sys.stdin\\) if f[''''type'''']==''''file'''']\")",
       "Bash(for f:*)",
-      "Bash(do echo:*)"
+      "Bash(do echo:*)",
+      "Bash(convert --version)",
+      "Bash(node -e \":*)",
+      "Bash(npx --yes @vite-pwa/assets-generator --preset minimal-2023 public/favicon.svg)"
     ]
   }
 }
