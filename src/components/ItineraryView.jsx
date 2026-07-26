@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, ExternalLink, Route } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Route, AlertTriangle } from 'lucide-react';
 import DayEditModal from './DayEditModal';
 import PlaceDetailModal from './PlaceDetailModal';
 import DayInsightsPanel from './DayInsightsPanel';
@@ -97,6 +97,12 @@ export default function ItineraryView({ store, t }) {
               </thead>
               <tbody>
                 {store.days.map((day, dayIndex) => {
+                  const prevDay = dayIndex > 0 ? store.days[dayIndex - 1] : null;
+                  const gapDays = prevDay
+                    ? Math.round(
+                        (new Date(day.date + 'T00:00:00') - new Date(prevDay.date + 'T00:00:00')) / 86400000
+                      ) - 1
+                    : 0;
                   const isToday = day.date === today;
                   const isPast = day.date < today;
                   const place = day.accommodationId ? getPlace(day.accommodationId) : null;
@@ -104,13 +110,24 @@ export default function ItineraryView({ store, t }) {
                   const cancelInfo = getCancelInfo(cancelDate, t);
                   const insightsOpen = expandedInsights.has(day.id);
                   const hasStops = day.items?.some((i) => i.type === 'place') || day.accommodationId;
-                  const prevDay = dayIndex > 0 ? store.days[dayIndex - 1] : null;
                   const prevPlace = prevDay?.accommodationId
                     ? store.places.find((p) => p.id === prevDay.accommodationId)
                     : null;
 
                   return (
                     <>
+                    {gapDays > 0 && (
+                      <tr key={`${day.id}-gap`} className="border-b border-amber-100 bg-amber-50">
+                        <td colSpan={8} className="px-3 py-1.5">
+                          <div className="flex items-center gap-1.5 text-xs text-amber-700">
+                            <AlertTriangle size={12} />
+                            {gapDays === 1
+                              ? 'יום חסר במסלול'
+                              : `${gapDays} ימים חסרים במסלול`}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     <tr
                       key={day.id}
                       className={`border-b border-gray-100 last:border-0 ${
