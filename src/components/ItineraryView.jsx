@@ -96,7 +96,7 @@ export default function ItineraryView({ store, t }) {
                 </tr>
               </thead>
               <tbody>
-                {store.days.map((day) => {
+                {store.days.map((day, dayIndex) => {
                   const isToday = day.date === today;
                   const isPast = day.date < today;
                   const place = day.accommodationId ? getPlace(day.accommodationId) : null;
@@ -104,6 +104,10 @@ export default function ItineraryView({ store, t }) {
                   const cancelInfo = getCancelInfo(cancelDate, t);
                   const insightsOpen = expandedInsights.has(day.id);
                   const hasStops = (day.stops?.length > 0) || day.accommodationId;
+                  const prevDay = dayIndex > 0 ? store.days[dayIndex - 1] : null;
+                  const prevPlace = prevDay?.accommodationId
+                    ? store.places.find((p) => p.id === prevDay.accommodationId)
+                    : null;
 
                   return (
                     <>
@@ -221,7 +225,7 @@ export default function ItineraryView({ store, t }) {
                     {insightsOpen && (
                       <tr key={`${day.id}-insights`} className="border-b border-gray-100 last:border-0">
                         <td colSpan={8} className="p-0">
-                          <DayInsightsPanel day={day} places={store.places} store={store} />
+                          <DayInsightsPanel day={day} places={store.places} store={store} prevPlace={prevPlace} />
                         </td>
                       </tr>
                     )}
