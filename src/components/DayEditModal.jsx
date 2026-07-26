@@ -196,18 +196,20 @@ export default function DayEditModal({ day, store, t, onClose }) {
             )}
           </div>
 
-          {/* Free Cancellation */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t.dayEdit.freeCancellation}
-            </label>
-            <input
-              type="date"
-              value={form.freeCancellation}
-              onChange={(e) => set('freeCancellation', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {/* Free Cancellation — only when no linked hotel (hotel has its own field) */}
+          {!form.accommodationId && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.dayEdit.freeCancellation}
+              </label>
+              <input
+                type="date"
+                value={form.freeCancellation}
+                onChange={(e) => set('freeCancellation', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
 
           {/* Notes */}
           <div>

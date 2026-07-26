@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo:*)",
+      "Bash(python3 -c \"import json,sys; [print\\(f[''''path'''']\\) for f in json.load\\(sys.stdin\\)[''''tree''''] if f[''''type'''']==''''blob'''']\")",
+      "Bash(python3 -c \"import json,sys; [print\\(f[''''path'''']\\) for f in json.load\\(sys.stdin\\)]\")",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm create:*)",
+      "Read(//Users/amirtatarsky/Library/CloudStorage/OneDrive-Personal/AI/Claude/**)",
+      "Bash(cp -r travel-planner/. \"Travel Planner/\")",
+      "Bash(rm -rf travel-planner)",
+      "Bash(npx tailwindcss:*)"
+    ]
+  }
+}

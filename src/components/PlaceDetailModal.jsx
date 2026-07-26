@@ -1,4 +1,4 @@
-import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar } from 'lucide-react';
+import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock } from 'lucide-react';
 
 const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, other: Star };
 const STATUS_COLORS = {
@@ -40,6 +40,14 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Free Cancellation */}
+          {place.freeCancellation && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Clock size={13} className="text-gray-400 shrink-0" />
+              <span>{t.placeEdit.freeCancellation}: <span className="font-medium">{place.freeCancellation}</span></span>
+            </div>
+          )}
+
           {/* Booking URL */}
           {place.bookingUrl && (
             <a

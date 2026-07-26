@@ -91,7 +91,8 @@ export default function ItineraryView({ store, t }) {
                   const isToday = day.date === today;
                   const isPast = day.date < today;
                   const place = day.accommodationId ? getPlace(day.accommodationId) : null;
-                  const cancelInfo = getCancelInfo(day.freeCancellation, t);
+                  const cancelDate = place?.freeCancellation ?? day.freeCancellation;
+                  const cancelInfo = getCancelInfo(cancelDate, t);
 
                   return (
                     <tr
@@ -163,7 +164,7 @@ export default function ItineraryView({ store, t }) {
                               {cancelInfo.label}
                             </span>
                             <div className="text-xs text-gray-400 mt-0.5">
-                              {formatDate(day.freeCancellation, store.language)}
+                              {formatDate(cancelDate, store.language)}
                             </div>
                           </div>
                         ) : (

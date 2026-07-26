@@ -9,6 +9,7 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
     status: place?.status ?? 'considering',
     description: place?.description ?? '',
     bookingUrl: place?.bookingUrl ?? '',
+    freeCancellation: place?.freeCancellation ?? '',
     tags: place?.tags ?? [],
     notes: place?.notes ?? '',
   });
@@ -118,6 +119,21 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {/* Free Cancellation — hotels only */}
+          {form.type === 'hotel' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.placeEdit.freeCancellation}
+              </label>
+              <input
+                type="date"
+                value={form.freeCancellation}
+                onChange={(e) => set('freeCancellation', e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
 
           {/* Tags */}
           <div>
