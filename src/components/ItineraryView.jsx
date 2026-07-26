@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Route } from 'lucide-react';
 import DayEditModal from './DayEditModal';
 import PlaceDetailModal from './PlaceDetailModal';
+import DayInsightsPanel from './DayInsightsPanel';
 
 function formatDate(dateStr, language) {
   if (!dateStr) return '';
@@ -35,6 +36,14 @@ function getCancelInfo(cancelDate, t) {
 export default function ItineraryView({ store, t }) {
   const [editDay, setEditDay] = useState(null);
   const [viewPlace, setViewPlace] = useState(null);
+  const [expandedInsights, setExpandedInsights] = useState(new Set());
+
+  const toggleInsights = (id) =>
+    setExpandedInsights((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -93,8 +102,11 @@ export default function ItineraryView({ store, t }) {
                   const place = day.accommodationId ? getPlace(day.accommodationId) : null;
                   const cancelDate = place?.freeCancellation ?? day.freeCancellation;
                   const cancelInfo = getCancelInfo(cancelDate, t);
+                  const insightsOpen = expandedInsights.has(day.id);
+                  const hasStops = (day.stops?.length > 0) || day.accommodationId;
 
                   return (
+                    <>
                     <tr
                       key={day.id}
                       className={`border-b border-gray-100 last:border-0 ${
@@ -181,6 +193,17 @@ export default function ItineraryView({ store, t }) {
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-0.5">
                           <button
+                            onClick={() => toggleInsights(day.id)}
+                            title="ניתוח מסלול"
+                            className={`p-1.5 rounded transition-colors ${
+                              insightsOpen
+                                ? 'text-indigo-600 bg-indigo-50'
+                                : 'text-gray-300 hover:text-indigo-500 hover:bg-indigo-50'
+                            }`}
+                          >
+                            <Route size={13} />
+                          </button>
+                          <button
                             onClick={() => setEditDay(day)}
                             className="p-1.5 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           >
@@ -195,6 +218,14 @@ export default function ItineraryView({ store, t }) {
                         </div>
                       </td>
                     </tr>
+                    {insightsOpen && (
+                      <tr key={`${day.id}-insights`} className="border-b border-gray-100 last:border-0">
+                        <td colSpan={8} className="p-0">
+                          <DayInsightsPanel day={day} places={store.places} />
+                        </td>
+                      </tr>
+                    )}
+                    </>
                   );
                 })}
               </tbody>

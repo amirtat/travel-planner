@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, Search, CheckCircle2, AlertCircle } from 'lucide-react';
+import { photonSearch } from '../routeApi';
 
 export default function PlaceEditModal({ place, store, t, onClose }) {
   const isNew = !place;
@@ -10,12 +11,37 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
     description: place?.description ?? '',
     bookingUrl: place?.bookingUrl ?? '',
     freeCancellation: place?.freeCancellation ?? '',
+    address: place?.address ?? '',
+    lat: place?.lat ?? null,
+    lon: place?.lon ?? null,
     tags: place?.tags ?? [],
     notes: place?.notes ?? '',
   });
   const [tagInput, setTagInput] = useState('');
+  const [geoResults, setGeoResults] = useState([]);
+  const [geoStatus, setGeoStatus] = useState('idle'); // idle | searching | done | error
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const handleGeoSearch = async () => {
+    const q = form.address.trim();
+    if (!q) return;
+    setGeoStatus('searching');
+    setGeoResults([]);
+    try {
+      const results = await photonSearch(q, 5);
+      setGeoResults(results);
+      setGeoStatus(results.length ? 'done' : 'error');
+    } catch {
+      setGeoStatus('error');
+    }
+  };
+
+  const applyGeoResult = (r) => {
+    setForm((f) => ({ ...f, address: r.displayName, lat: r.lat, lon: r.lon }));
+    setGeoResults([]);
+    setGeoStatus('idle');
+  };
 
   const addTag = () => {
     const v = tagInput.trim();
@@ -118,6 +144,63 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
               placeholder={t.placeEdit.bookingUrlPlaceholder}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          {/* Address / Location geocoding */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t.placeEdit.address}
+              {form.lat && (
+                <span className="ms-2 inline-flex items-center gap-1 text-xs text-green-600 font-normal">
+                  <CheckCircle2 size={11} />
+                  {t.placeEdit.geocoded}
+                </span>
+              )}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={form.address}
+                onChange={(e) => {
+                  set('address', e.target.value);
+                  if (form.lat) setForm((f) => ({ ...f, lat: null, lon: null }));
+                  setGeoResults([]);
+                  setGeoStatus('idle');
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGeoSearch())}
+                placeholder={t.placeEdit.addressPlaceholder}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handleGeoSearch}
+                disabled={geoStatus === 'searching' || !form.address.trim()}
+                className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors disabled:opacity-40"
+                title={t.placeEdit.geocodeBtn}
+              >
+                {geoStatus === 'searching'
+                  ? <span className="animate-spin inline-block text-xs">⟳</span>
+                  : <Search size={15} />
+                }
+              </button>
+            </div>
+            {geoStatus === 'error' && geoResults.length === 0 && (
+              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                <AlertCircle size={11} /> {t.placeEdit.geocodeError}
+              </p>
+            )}
+            {geoResults.length > 0 && (
+              <div className="mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                {geoResults.map((r, i) => (
+                  <button
+                    key={i}
+                    onClick={() => applyGeoResult(r)}
+                    className="w-full text-start px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-b border-gray-100 last:border-0 transition-colors"
+                  >
+                    {r.displayName}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Free Cancellation — hotels only */}

@@ -24,23 +24,19 @@ export default function App() {
         onSettings={() => setShowSettings(true)}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
-        {tab === 'itinerary' && <ItineraryView store={store} t={t} />}
-        {tab === 'places' && <PlacesView store={store} t={t} />}
-        {tab === 'calculator' && (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-            </div>
-            <div className="text-center">
-              <p className="font-medium text-gray-500">{t.tabs.calculator}</p>
-              <p className="text-sm mt-1">יושלב בקרוב מהמחשבון הקיים</p>
-            </div>
-          </div>
-        )}
-      </main>
+      {tab === 'calculator' ? (
+        <iframe
+          src="https://amirtat.github.io/distance-calculator/"
+          className="flex-1 w-full border-0"
+          title="מחשבון מרחקים"
+          allow="geolocation"
+        />
+      ) : (
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+          {tab === 'itinerary' && <ItineraryView store={store} t={t} />}
+          {tab === 'places' && <PlacesView store={store} t={t} />}
+        </main>
+      )}
 
       {showSettings && (
         <SettingsModal store={store} t={t} onClose={() => setShowSettings(false)} />

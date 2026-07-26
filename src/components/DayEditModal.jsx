@@ -10,6 +10,7 @@ export default function DayEditModal({ day, store, t, onClose }) {
     accommodationName: day?.accommodationName ?? '',
     region: day?.region ?? '',
     freeCancellation: day?.freeCancellation ?? '',
+    stops: day?.stops ?? [],
     notes: day?.notes ?? '',
   });
   const [actInput, setActInput] = useState('');
@@ -208,6 +209,44 @@ export default function DayEditModal({ day, store, t, onClose }) {
                 onChange={(e) => set('freeCancellation', e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+          )}
+
+          {/* Stops for route calculation */}
+          {store.places.filter((p) => p.type !== 'hotel').length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.dayEdit.stops}
+                <span className="text-xs font-normal text-gray-400 ms-1">({t.dayEdit.stopsHint})</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {store.places
+                  .filter((p) => p.type !== 'hotel')
+                  .map((p) => {
+                    const selected = form.stops.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() =>
+                          set(
+                            'stops',
+                            selected
+                              ? form.stops.filter((id) => id !== p.id)
+                              : [...form.stops, p.id]
+                          )
+                        }
+                        className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                          selected
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
           )}
 
