@@ -103,7 +103,7 @@ export default function ItineraryView({ store, t }) {
                   const cancelDate = place?.freeCancellation ?? day.freeCancellation;
                   const cancelInfo = getCancelInfo(cancelDate, t);
                   const insightsOpen = expandedInsights.has(day.id);
-                  const hasStops = (day.stops?.length > 0) || day.accommodationId;
+                  const hasStops = day.items?.some((i) => i.type === 'place') || day.accommodationId;
                   const prevDay = dayIndex > 0 ? store.days[dayIndex - 1] : null;
                   const prevPlace = prevDay?.accommodationId
                     ? store.places.find((p) => p.id === prevDay.accommodationId)
@@ -139,14 +139,19 @@ export default function ItineraryView({ store, t }) {
                       {/* Activities */}
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1 max-w-xs">
-                          {(day.activities || []).map((act, i) => (
-                            <span
-                              key={i}
-                              className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                            >
-                              {act}
-                            </span>
-                          ))}
+                          {(day.items || []).map((item, i) => {
+                            const label = item.type === 'place'
+                              ? store.places.find((p) => p.id === item.id)?.name ?? '?'
+                              : item.value;
+                            return (
+                              <span
+                                key={i}
+                                className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
+                              >
+                                {label}
+                              </span>
+                            );
+                          })}
                         </div>
                       </td>
 

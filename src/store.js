@@ -9,11 +9,28 @@ const DEFAULT_DATA = {
   places: [],
 };
 
+// Migrate days from old {activities[], stops[]} to new {items[]}
+function migrateDay(day) {
+  if (day.items !== undefined) return day;
+  const items = [
+    ...(day.stops ?? []).map((id) => ({ type: 'place', id })),
+    ...(day.activities ?? []).map((value) => ({ type: 'text', value })),
+  ];
+  const { activities, stops, ...rest } = day;
+  return { ...rest, items };
+}
+
+function migrateData(data) {
+  if (!data.days?.some((d) => d.items === undefined)) return data;
+  return { ...data, days: data.days.map(migrateDay) };
+}
+
 function useLocalStorage(key, defaultValue) {
   const [value, setValue] = useState(() => {
     try {
       const stored = localStorage.getItem(key);
-      return stored ? { ...defaultValue, ...JSON.parse(stored) } : defaultValue;
+      if (stored) return migrateData({ ...defaultValue, ...JSON.parse(stored) });
+      return defaultValue;
     } catch {
       return defaultValue;
     }
@@ -75,9 +92,11 @@ export function useTravelStore() {
     setData((prev) => ({
       ...prev,
       places: prev.places.filter((p) => p.id !== id),
-      days: prev.days.map((d) =>
-        d.accommodationId === id ? { ...d, accommodationId: null } : d
-      ),
+      days: prev.days.map((d) => ({
+        ...d,
+        accommodationId: d.accommodationId === id ? null : d.accommodationId,
+        items: (d.items ?? []).filter((i) => !(i.type === 'place' && i.id === id)),
+      })),
     }));
   };
 

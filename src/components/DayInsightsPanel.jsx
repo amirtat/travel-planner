@@ -44,7 +44,11 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
     ? places.find((p) => p.id === day.accommodationId)
     : null;
 
-  const middlePlaces = (day.stops ?? [])
+  const stopIds = (day.items ?? [])
+    .filter((i) => i.type === 'place')
+    .map((i) => i.id);
+
+  const middlePlaces = stopIds
     .map((id) => places.find((p) => p.id === id))
     .filter(Boolean);
 
@@ -154,7 +158,7 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
 
       // Compute optimal stop IDs for "Apply" button (middle only)
       const optimalStopIds = optMiddleOrder.map((i) => geocodedNodes[i].id);
-      const ungeocodedStopIds = (day.stops ?? []).filter(
+      const ungeocodedStopIds = stopIds.filter(
         (id) => !geocodedNodes.some((n) => n.id === id)
       );
 
@@ -295,7 +299,12 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
             {!result.isOptimal && store && (
               <button
                 onClick={() => {
-                  store.updateDay(day.id, { stops: result.optimalStopIds });
+                  const textItems = (day.items ?? []).filter((i) => i.type === 'text');
+                  const newItems = [
+                    ...result.optimalStopIds.map((id) => ({ type: 'place', id })),
+                    ...textItems,
+                  ];
+                  store.updateDay(day.id, { items: newItems });
                   setStatus('idle');
                   setResult(null);
                 }}

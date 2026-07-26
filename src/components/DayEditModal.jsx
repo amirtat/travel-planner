@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Plus, Trash2, GripVertical } from 'lucide-react';
+import { X, Plus, Trash2, GripVertical, MapPin } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -15,8 +15,12 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableStop({ id, name, onRemove }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+function uid() { return Math.random().toString(36).slice(2); }
+
+function SortableItem({ item, places, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item._uid });
+  const place = item.type === 'place' ? places.find((p) => p.id === item.id) : null;
+  const label = item.type === 'place' ? (place?.name ?? '?') : item.value;
   return (
     <div
       ref={setNodeRef}
@@ -25,15 +29,12 @@ function SortableStop({ id, name, onRemove }) {
         isDragging ? 'shadow-lg border-indigo-300 opacity-80' : 'border-gray-200'
       }`}
     >
-      <span
-        {...attributes}
-        {...listeners}
-        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
-      >
+      <span {...attributes} {...listeners} className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none">
         <GripVertical size={14} />
       </span>
-      <span className="flex-1 text-gray-700 text-xs truncate">{name}</span>
-      <button onClick={() => onRemove(id)} className="text-gray-300 hover:text-red-400 transition-colors">
+      <MapPin size={11} className={item.type === 'place' ? 'text-indigo-400 shrink-0' : 'text-gray-300 shrink-0'} />
+      <span className="flex-1 text-gray-700 text-xs truncate">{label}</span>
+      <button onClick={() => onRemove(item._uid)} className="text-gray-300 hover:text-red-400 transition-colors">
         <X size={12} />
       </button>
     </div>
@@ -44,43 +45,46 @@ export default function DayEditModal({ day, store, t, onClose }) {
   const isNew = !day;
   const [form, setForm] = useState({
     date: day?.date ?? '',
-    activities: day?.activities ?? [],
     accommodationId: day?.accommodationId ?? '',
     accommodationName: day?.accommodationName ?? '',
     region: day?.region ?? '',
     freeCancellation: day?.freeCancellation ?? '',
-    stops: day?.stops ?? [],
+    items: (day?.items ?? []).map((item) => ({ ...item, _uid: uid() })),
     notes: day?.notes ?? '',
   });
-  const [actInput, setActInput] = useState('');
+  const [itemInput, setItemInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const blurTimeout = useRef(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const hotels = store.places.filter((p) => p.type === 'hotel');
-  const nonHotelPlaces = store.places.filter((p) => p.type !== 'hotel');
-
-  const placeSuggestions = store.places
-    .map((p) => p.name)
-    .filter(
-      (name) =>
-        actInput.trim() &&
-        name.toLowerCase().includes(actInput.toLowerCase()) &&
-        !form.activities.includes(name)
-    );
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  const addActivity = (value) => {
-    const v = (value ?? actInput).trim();
-    if (!v || form.activities.includes(v)) return;
-    set('activities', [...form.activities, v]);
-    setActInput('');
+  // Places not already added as items
+  const placeSuggestions = store.places.filter(
+    (p) =>
+      itemInput.trim() &&
+      p.name.toLowerCase().includes(itemInput.toLowerCase()) &&
+      !form.items.some((i) => i.type === 'place' && i.id === p.id)
+  );
+
+  const addPlaceItem = (place) => {
+    set('items', [...form.items, { type: 'place', id: place.id, _uid: uid() }]);
+    setItemInput('');
     setShowSuggestions(false);
   };
 
-  const removeActivity = (i) =>
-    set('activities', form.activities.filter((_, j) => j !== i));
+  const addTextItem = (text) => {
+    const v = (text ?? itemInput).trim();
+    if (!v) return;
+    set('items', [...form.items, { type: 'text', value: v, _uid: uid() }]);
+    setItemInput('');
+    setShowSuggestions(false);
+  };
+
+  const removeItem = (itemUid) =>
+    set('items', form.items.filter((i) => i._uid !== itemUid));
 
   const handleAccommodationSelect = (e) => {
     const id = e.target.value;
@@ -96,7 +100,9 @@ export default function DayEditModal({ day, store, t, onClose }) {
 
   const handleSave = () => {
     if (!form.date) return;
-    isNew ? store.addDay(form) : store.updateDay(day.id, form);
+    const cleanItems = form.items.map(({ _uid, ...rest }) => rest);
+    const formData = { ...form, items: cleanItems };
+    isNew ? store.addDay(formData) : store.updateDay(day.id, formData);
     onClose();
   };
 
@@ -146,60 +152,82 @@ export default function DayEditModal({ day, store, t, onClose }) {
             />
           </div>
 
-          {/* Activities */}
+          {/* Items — unified places + free text */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.dayEdit.activities}</label>
-            <div className="relative mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              מקומות לביקור ביום זה
+            </label>
+
+            {/* Current items — draggable */}
+            {form.items.length > 0 && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={({ active, over }) => {
+                  if (over && active.id !== over.id) {
+                    const oldIdx = form.items.findIndex((i) => i._uid === active.id);
+                    const newIdx = form.items.findIndex((i) => i._uid === over.id);
+                    set('items', arrayMove(form.items, oldIdx, newIdx));
+                  }
+                }}
+              >
+                <SortableContext items={form.items.map((i) => i._uid)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-1 mb-2">
+                    {form.items.map((item) => (
+                      <SortableItem key={item._uid} item={item} places={store.places} onRemove={removeItem} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            )}
+
+            {/* Input with suggestions */}
+            <div className="relative">
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={actInput}
-                  onChange={(e) => { setActInput(e.target.value); setShowSuggestions(true); }}
+                  value={itemInput}
+                  onChange={(e) => { setItemInput(e.target.value); setShowSuggestions(true); }}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => { blurTimeout.current = setTimeout(() => setShowSuggestions(false), 150); }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); addActivity(); }
+                    if (e.key === 'Enter') { e.preventDefault(); addTextItem(); }
                     if (e.key === 'Escape') setShowSuggestions(false);
                   }}
-                  placeholder={t.dayEdit.addActivity}
+                  placeholder="הוסף מקום או פעילות..."
                   className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
-                  onClick={() => addActivity()}
+                  onClick={() => addTextItem()}
                   className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Plus size={16} />
                 </button>
               </div>
-              {showSuggestions && placeSuggestions.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                  {placeSuggestions.map((name, i) => (
+              {showSuggestions && (placeSuggestions.length > 0 || itemInput.trim()) && (
+                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                  {placeSuggestions.map((place) => (
                     <li
-                      key={i}
-                      onMouseDown={(e) => { e.preventDefault(); clearTimeout(blurTimeout.current); addActivity(name); }}
-                      className="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                      key={place.id}
+                      onMouseDown={(e) => { e.preventDefault(); clearTimeout(blurTimeout.current); addPlaceItem(place); }}
+                      className="px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center gap-2"
                     >
-                      {name}
+                      <MapPin size={12} className="text-indigo-400 shrink-0" />
+                      {place.name}
                     </li>
                   ))}
+                  {itemInput.trim() && (
+                    <li
+                      onMouseDown={(e) => { e.preventDefault(); clearTimeout(blurTimeout.current); addTextItem(itemInput.trim()); }}
+                      className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer flex items-center gap-2 border-t border-gray-100"
+                    >
+                      <Plus size={12} className="shrink-0" />
+                      הוסף כטקסט: &ldquo;{itemInput.trim()}&rdquo;
+                    </li>
+                  )}
                 </ul>
               )}
             </div>
-            {form.activities.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {form.activities.map((act, i) => (
-                  <span
-                    key={i}
-                    className="flex items-center gap-1 bg-blue-50 text-blue-700 text-sm px-2.5 py-1 rounded-full"
-                  >
-                    {act}
-                    <button onClick={() => removeActivity(i)} className="text-blue-400 hover:text-red-500 transition-colors">
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Accommodation */}
@@ -250,64 +278,6 @@ export default function DayEditModal({ day, store, t, onClose }) {
                 onChange={(e) => set('freeCancellation', e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-          )}
-
-          {/* Stops for route calculation — draggable ordered list */}
-          {nonHotelPlaces.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t.dayEdit.stops}
-                <span className="text-xs font-normal text-gray-400 ms-2">{t.dayEdit.stopsHint}</span>
-              </label>
-
-              {/* Selected stops — draggable */}
-              {form.stops.length > 0 && (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={({ active, over }) => {
-                    if (over && active.id !== over.id) {
-                      const oldIdx = form.stops.indexOf(active.id);
-                      const newIdx = form.stops.indexOf(over.id);
-                      set('stops', arrayMove(form.stops, oldIdx, newIdx));
-                    }
-                  }}
-                >
-                  <SortableContext items={form.stops} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-1 mb-2">
-                      {form.stops.map((id) => {
-                        const p = store.places.find((pl) => pl.id === id);
-                        if (!p) return null;
-                        return (
-                          <SortableStop
-                            key={id}
-                            id={id}
-                            name={p.name}
-                            onRemove={(rid) => set('stops', form.stops.filter((s) => s !== rid))}
-                          />
-                        );
-                      })}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              )}
-
-              {/* Available places to add */}
-              <div className="flex flex-wrap gap-1.5">
-                {nonHotelPlaces
-                  .filter((p) => !form.stops.includes(p.id))
-                  .map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => set('stops', [...form.stops, p.id])}
-                      className="px-2.5 py-1 text-xs rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-                    >
-                      + {p.name}
-                    </button>
-                  ))}
-              </div>
             </div>
           )}
 
