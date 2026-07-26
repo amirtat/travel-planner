@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, ExternalLink, Hotel, MapPin, Utensils, Star } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, ExternalLink, Hotel, MapPin, Utensils, Star, Search, X } from 'lucide-react';
 import PlaceDetailModal from './PlaceDetailModal';
 import PlaceEditModal from './PlaceEditModal';
 
@@ -13,8 +13,11 @@ const STATUS_COLORS = {
 export default function PlacesView({ store, t }) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTags, setFilterTags] = useState(new Set());
+  const [search, setSearch] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [viewPlace, setViewPlace] = useState(null);
   const [editPlace, setEditPlace] = useState(null);
+  const searchRef = useRef(null);
 
   const STATUSES = ['all', 'booked', 'considering', 'visited'];
 
@@ -28,9 +31,18 @@ export default function PlacesView({ store, t }) {
     });
   };
 
+  const q = search.trim().toLowerCase();
+
+  const suggestions = q.length >= 1
+    ? store.places
+        .filter((p) => p.name.toLowerCase().includes(q) && p.name.toLowerCase() !== q)
+        .slice(0, 6)
+    : [];
+
   const filtered = store.places.filter((p) => {
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
     if (filterTags.size > 0 && !([...filterTags].some((tag) => p.tags?.includes(tag)))) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !p.description?.toLowerCase().includes(q) && !p.tags?.some((tag) => tag.toLowerCase().includes(q))) return false;
     return true;
   });
 
@@ -43,6 +55,47 @@ export default function PlacesView({ store, t }) {
     <div>
       {/* Toolbar */}
       <div className="mb-4 space-y-2">
+        {/* Search */}
+        <div className="relative" ref={searchRef}>
+          <div className="relative flex items-center">
+            <Search size={14} className="absolute start-3 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setShowSuggestions(true); }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              placeholder={t.places.searchPlaceholder}
+              className="w-full ps-8 pe-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute end-2.5 text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+              {suggestions.map((p) => (
+                <button
+                  key={p.id}
+                  onMouseDown={() => { setSearch(p.name); setShowSuggestions(false); }}
+                  className="w-full text-start px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-2"
+                >
+                  {(() => { const Icon = TYPE_ICONS[p.type] || Star; return <Icon size={13} className="text-gray-400 shrink-0" />; })()}
+                  <span className="truncate">{p.name}</span>
+                  <span className={`ms-auto text-xs px-1.5 py-0.5 rounded-full shrink-0 ${STATUS_COLORS[p.status] || 'bg-gray-100 text-gray-500'}`}>
+                    {t.places[p.status] || p.status}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             {STATUSES.map((s) => {

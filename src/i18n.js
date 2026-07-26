@@ -22,6 +22,7 @@ const TRANSLATIONS = {
     places: {
       title: 'מקומות',
       addPlace: 'הוסף מקום',
+      searchPlaceholder: 'חיפוש מקומות...',
       all: 'הכל',
       hotel: 'מלון',
       attraction: 'אטרקציה',
@@ -115,6 +116,7 @@ const TRANSLATIONS = {
     places: {
       title: 'Places',
       addPlace: 'Add Place',
+      searchPlaceholder: 'Search places...',
       all: 'All',
       hotel: 'Hotel',
       attraction: 'Attraction',
