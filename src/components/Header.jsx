@@ -1,4 +1,4 @@
-import { Map, MapPin, Calculator, Settings } from 'lucide-react';
+import { Map, MapPin, Calculator, Settings, Globe } from 'lucide-react';
 
 const TABS = [
   { key: 'itinerary', icon: Map },
@@ -29,6 +29,13 @@ export default function Header({ store, t, tab, onTabChange, onSettings }) {
               className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 font-medium transition-colors"
             >
               {store.language === 'he' ? 'EN' : 'עב'}
+            </button>
+            <button
+              onClick={store.clearActiveTrip}
+              title="החלף טיול"
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              <Globe size={17} />
             </button>
             <button
               onClick={onSettings}

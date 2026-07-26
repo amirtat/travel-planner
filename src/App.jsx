@@ -6,6 +6,7 @@ import ItineraryView from './components/ItineraryView';
 import PlacesView from './components/PlacesView';
 import SettingsModal from './components/SettingsModal';
 import BuiltinCalculator from './components/BuiltinCalculator';
+import TripSelector from './components/TripSelector';
 
 export default function App() {
   const store = useTravelStore();
@@ -14,6 +15,18 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const isRTL = store.language === 'he';
+
+  if (store.loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-400 text-sm animate-pulse">טוען...</div>
+      </div>
+    );
+  }
+
+  if (!store.activeTripId) {
+    return <TripSelector store={store} />;
+  }
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} lang={store.language} className="min-h-screen bg-gray-50 flex flex-col">
