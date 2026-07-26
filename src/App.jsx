@@ -5,6 +5,7 @@ import Header from './components/Header';
 import ItineraryView from './components/ItineraryView';
 import PlacesView from './components/PlacesView';
 import SettingsModal from './components/SettingsModal';
+import BuiltinCalculator from './components/BuiltinCalculator';
 
 export default function App() {
   const store = useTravelStore();
@@ -24,19 +25,11 @@ export default function App() {
         onSettings={() => setShowSettings(true)}
       />
 
-      {tab === 'calculator' ? (
-        <iframe
-          src="https://amirtat.github.io/distance-calculator/"
-          className="flex-1 w-full border-0"
-          title="מחשבון מרחקים"
-          allow="geolocation"
-        />
-      ) : (
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
-          {tab === 'itinerary' && <ItineraryView store={store} t={t} />}
-          {tab === 'places' && <PlacesView store={store} t={t} />}
-        </main>
-      )}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+        {tab === 'itinerary' && <ItineraryView store={store} t={t} />}
+        {tab === 'places' && <PlacesView store={store} t={t} />}
+        {tab === 'calculator' && <BuiltinCalculator store={store} t={t} />}
+      </main>
 
       {showSettings && (
         <SettingsModal store={store} t={t} onClose={() => setShowSettings(false)} />

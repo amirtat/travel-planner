@@ -1,5 +1,44 @@
 import { useState, useRef } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+function SortableStop({ id, name, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-center gap-2 bg-white border rounded-lg px-2 py-1.5 text-sm ${
+        isDragging ? 'shadow-lg border-indigo-300 opacity-80' : 'border-gray-200'
+      }`}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical size={14} />
+      </span>
+      <span className="flex-1 text-gray-700 text-xs truncate">{name}</span>
+      <button onClick={() => onRemove(id)} className="text-gray-300 hover:text-red-400 transition-colors">
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
 
 export default function DayEditModal({ day, store, t, onClose }) {
   const isNew = !day;
@@ -17,7 +56,9 @@ export default function DayEditModal({ day, store, t, onClose }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const blurTimeout = useRef(null);
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const hotels = store.places.filter((p) => p.type === 'hotel');
+  const nonHotelPlaces = store.places.filter((p) => p.type !== 'hotel');
 
   const placeSuggestions = store.places
     .map((p) => p.name)
@@ -212,40 +253,60 @@ export default function DayEditModal({ day, store, t, onClose }) {
             </div>
           )}
 
-          {/* Stops for route calculation */}
-          {store.places.filter((p) => p.type !== 'hotel').length > 0 && (
+          {/* Stops for route calculation — draggable ordered list */}
+          {nonHotelPlaces.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t.dayEdit.stops}
-                <span className="text-xs font-normal text-gray-400 ms-1">({t.dayEdit.stopsHint})</span>
+                <span className="text-xs font-normal text-gray-400 ms-2">{t.dayEdit.stopsHint}</span>
               </label>
-              <div className="flex flex-wrap gap-2">
-                {store.places
-                  .filter((p) => p.type !== 'hotel')
-                  .map((p) => {
-                    const selected = form.stops.includes(p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() =>
-                          set(
-                            'stops',
-                            selected
-                              ? form.stops.filter((id) => id !== p.id)
-                              : [...form.stops, p.id]
-                          )
-                        }
-                        className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
-                          selected
-                            ? 'bg-indigo-600 text-white border-indigo-600'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
-                        }`}
-                      >
-                        {p.name}
-                      </button>
-                    );
-                  })}
+
+              {/* Selected stops — draggable */}
+              {form.stops.length > 0 && (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={({ active, over }) => {
+                    if (over && active.id !== over.id) {
+                      const oldIdx = form.stops.indexOf(active.id);
+                      const newIdx = form.stops.indexOf(over.id);
+                      set('stops', arrayMove(form.stops, oldIdx, newIdx));
+                    }
+                  }}
+                >
+                  <SortableContext items={form.stops} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-1 mb-2">
+                      {form.stops.map((id) => {
+                        const p = store.places.find((pl) => pl.id === id);
+                        if (!p) return null;
+                        return (
+                          <SortableStop
+                            key={id}
+                            id={id}
+                            name={p.name}
+                            onRemove={(rid) => set('stops', form.stops.filter((s) => s !== rid))}
+                          />
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+
+              {/* Available places to add */}
+              <div className="flex flex-wrap gap-1.5">
+                {nonHotelPlaces
+                  .filter((p) => !form.stops.includes(p.id))
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => set('stops', [...form.stops, p.id])}
+                      className="px-2.5 py-1 text-xs rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                    >
+                      + {p.name}
+                    </button>
+                  ))}
               </div>
             </div>
           )}

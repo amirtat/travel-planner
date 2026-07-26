@@ -221,7 +221,7 @@ export default function ItineraryView({ store, t }) {
                     {insightsOpen && (
                       <tr key={`${day.id}-insights`} className="border-b border-gray-100 last:border-0">
                         <td colSpan={8} className="p-0">
-                          <DayInsightsPanel day={day} places={store.places} />
+                          <DayInsightsPanel day={day} places={store.places} store={store} />
                         </td>
                       </tr>
                     )}

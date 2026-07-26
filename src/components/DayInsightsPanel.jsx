@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Car, RotateCw, AlertCircle, Check, ArrowRight, MapPin } from 'lucide-react';
+import { Car, RotateCw, AlertCircle, Check, ArrowRight, MapPin, Sparkles } from 'lucide-react';
 import { getDistanceMatrix, nearestNeighborTSP, routeCost } from '../routeApi';
 
 function formatTime(seconds) {
@@ -17,7 +17,7 @@ function formatDist(meters) {
   return `${km} ק"מ`;
 }
 
-export default function DayInsightsPanel({ day, places }) {
+export default function DayInsightsPanel({ day, places, store }) {
   const [status, setStatus] = useState('idle'); // idle | loading | done | error | no-coords
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -77,6 +77,16 @@ export default function DayInsightsPanel({ day, places }) {
       const savedSec = currentDuration - optDuration;
       const isOptimal = savedSec < 60;
 
+      // Compute optimal stops[] order (exclude hotel, keep ungeooded at end)
+      const optimalStopIds = optOrder
+        .map((i) => geocodedStops[i])
+        .filter((s) => s.role === 'stop')
+        .map((s) => s.id);
+      // Append any stops that couldn't be geocoded
+      const ungeocoded = (day.stops ?? []).filter(
+        (id) => !geocodedStops.some((s) => s.id === id)
+      );
+
       setResult({
         totalDuration: optDuration,
         totalDistance: optDistance,
@@ -85,6 +95,7 @@ export default function DayInsightsPanel({ day, places }) {
         orderedStops: optOrder.map((i) => geocodedStops[i]),
         legs,
         missingCoords,
+        optimalStopIds: [...optimalStopIds, ...ungeocoded],
       });
       setStatus('done');
     } catch (e) {
@@ -164,6 +175,20 @@ export default function DayInsightsPanel({ day, places }) {
               <span className="text-amber-600">
                 הסדר הנוכחי ארוך ב-{formatTime(result.savedSec)} מהמיטבי
               </span>
+            )}
+
+            {!result.isOptimal && store && (
+              <button
+                onClick={() => {
+                  store.updateDay(day.id, { stops: result.optimalStopIds });
+                  setStatus('idle');
+                  setResult(null);
+                }}
+                className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-2.5 py-1 rounded-full hover:bg-indigo-700 transition-colors font-medium"
+              >
+                <Sparkles size={10} />
+                החל סדר מיטבי
+              </button>
             )}
 
             {result.missingCoords > 0 && (
