@@ -140,15 +140,22 @@ export default function ItineraryView({ store, t }) {
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1 max-w-xs">
                           {(day.items || []).map((item, i) => {
-                            const label = item.type === 'place'
-                              ? store.places.find((p) => p.id === item.id)?.name ?? '?'
-                              : item.value;
+                            if (item.type === 'place') {
+                              const p = store.places.find((pl) => pl.id === item.id);
+                              if (!p) return null;
+                              return (
+                                <button
+                                  key={i}
+                                  onClick={() => setViewPlace(p)}
+                                  className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                                >
+                                  {p.name}
+                                </button>
+                              );
+                            }
                             return (
-                              <span
-                                key={i}
-                                className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                              >
-                                {label}
+                              <span key={i} className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                                {item.value}
                               </span>
                             );
                           })}
