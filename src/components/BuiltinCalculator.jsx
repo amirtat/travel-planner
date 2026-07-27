@@ -13,11 +13,11 @@ const MODES = [
 
 const TYPES = ['hotel', 'attraction', 'restaurant', 'other'];
 
-function timeBadge(min) {
+function timeBadge(min, greenMax = 30, yellowMax = 60) {
   if (min == null) return null;
-  if (min <= 30) return { bg: 'bg-emerald-100', text: 'text-emerald-800', dot: 'bg-emerald-500' };
-  if (min <= 60) return { bg: 'bg-amber-100',   text: 'text-amber-800',   dot: 'bg-amber-500' };
-  return              { bg: 'bg-red-100',        text: 'text-red-800',     dot: 'bg-red-500' };
+  if (min <= greenMax)  return { bg: 'bg-emerald-100', text: 'text-emerald-800', dot: 'bg-emerald-500' };
+  if (min <= yellowMax) return { bg: 'bg-amber-100',   text: 'text-amber-800',   dot: 'bg-amber-500' };
+  return                       { bg: 'bg-red-100',     text: 'text-red-800',     dot: 'bg-red-500' };
 }
 
 function formatTime(min) {
@@ -401,7 +401,7 @@ export default function BuiltinCalculator({ store, t }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {sortedResults.map(({ place, distance_km, duration_min, error, fromCache }) => {
-                  const badge = timeBadge(duration_min);
+                  const badge = timeBadge(duration_min, store.travelGreenMax ?? 30, store.travelYellowMax ?? 60);
                   return (
                     <tr key={place.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-3 py-3">
@@ -439,11 +439,16 @@ export default function BuiltinCalculator({ store, t }) {
             </table>
           </div>
           <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center gap-5 flex-wrap">
-            {[
-              { dot: 'bg-emerald-500', label: '≤ 30 דק\'' },
-              { dot: 'bg-amber-500',   label: '30–60 דק\'' },
-              { dot: 'bg-red-500',     label: '> 60 דק\'' },
-            ].map(({ dot, label }) => (
+            {(() => {
+              const g = store.travelGreenMax ?? 30;
+              const y = store.travelYellowMax ?? 60;
+              const min = lang === 'he' ? 'דק\'' : 'min';
+              return [
+                { dot: 'bg-emerald-500', label: `≤ ${g} ${min}` },
+                { dot: 'bg-amber-500',   label: `${g}–${y} ${min}` },
+                { dot: 'bg-red-500',     label: `> ${y} ${min}` },
+              ];
+            })().map(({ dot, label }) => (
               <div key={label} className="flex items-center gap-1.5 text-xs text-gray-400">
                 <span className={`w-2 h-2 rounded-full ${dot}`} />{label}
               </div>

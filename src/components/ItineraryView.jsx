@@ -18,17 +18,16 @@ function getDayName(dateStr, dayNames) {
   return dayNames[new Date(dateStr + 'T00:00:00').getDay()];
 }
 
-function getCancelInfo(cancelDate, t) {
+function getCancelInfo(cancelDate, t, urgentDays = 3, soonDays = 7) {
   if (!cancelDate) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const cancel = new Date(cancelDate + 'T00:00:00');
   const diff = Math.floor((cancel - today) / 86400000);
-  if (diff < 0)  return { label: t.cancelStatus.expired, urgent: false, expired: true };
-  if (diff === 0) return { label: `⚠ ${t.cancelStatus.urgent}`, urgent: true };
-  if (diff <= 3)  return { label: `${diff}d · ${t.cancelStatus.urgent}`, urgent: true };
-  if (diff <= 7)  return { label: `${diff}d · ${t.cancelStatus.soon}`, urgent: false };
-  if (diff <= 14) return { label: `${diff}d · ${t.cancelStatus.safe}`, urgent: false };
+  if (diff < 0)           return { label: t.cancelStatus.expired, urgent: false, expired: true };
+  if (diff === 0)         return { label: `⚠ ${t.cancelStatus.urgent}`, urgent: true };
+  if (diff <= urgentDays) return { label: `${diff}d · ${t.cancelStatus.urgent}`, urgent: true };
+  if (diff <= soonDays)   return { label: `${diff}d · ${t.cancelStatus.soon}`, urgent: false };
   return { label: `${diff}d · ${t.cancelStatus.safe}`, urgent: false };
 }
 
@@ -113,7 +112,7 @@ export default function ItineraryView({ store, t }) {
               const isPast  = day.date && day.date < today;
               const place   = day.accommodationId ? getPlace(day.accommodationId) : null;
               const cancelDate = place?.freeCancellation ?? day.freeCancellation;
-              const cancelInfo = getCancelInfo(cancelDate, t);
+              const cancelInfo = getCancelInfo(cancelDate, t, store.cancelUrgentDays ?? 3, store.cancelSoonDays ?? 7);
               const insightsOpen = expandedInsights.has(day.id);
 
               const prevDay   = dayIndex > 0 ? store.days[dayIndex - 1] : null;
