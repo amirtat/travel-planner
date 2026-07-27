@@ -2,9 +2,19 @@ import { useState } from 'react';
 import { X, Plus, Trash2, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { photonSearch, parseGoogleMapsUrl } from '../routeApi';
 
+const inputStyle = {
+  background: 'var(--c-vellum)',
+  border: '1px solid var(--c-border)',
+  color: 'var(--c-ink)',
+  '--tw-ring-color': 'var(--c-amber)',
+};
+
+const labelClass = 'block text-xs font-semibold uppercase tracking-wide mb-1.5';
+
 export default function PlaceEditModal({ place, store, t, onClose }) {
   const isNew = !place;
   const existingRegions = [...new Set(store.places.map((p) => p.region).filter(Boolean))].sort();
+
   const [form, setForm] = useState({
     name: place?.name ?? '',
     type: place?.type ?? 'hotel',
@@ -43,7 +53,6 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
   const handleGeoSearch = async () => {
     const q = form.address.trim();
     if (!q) return;
-    // If it's a Google Maps URL, extract directly
     const gmCoords = parseGoogleMapsUrl(q);
     if (gmCoords) {
       const address = gmCoords.name || q;
@@ -92,12 +101,25 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="font-bold text-gray-800 text-lg">
+      <div
+        className="rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between p-4 sticky top-0 rounded-t-2xl"
+          style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}
+        >
+          <h3 className="font-bold text-lg" style={{ color: 'var(--c-ink)' }}>
             {isNew ? t.placeEdit.titleAdd : t.placeEdit.titleEdit}
           </h3>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--c-muted)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--c-ink)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
+          >
             <X size={18} />
           </button>
         </div>
@@ -105,8 +127,8 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
         <div className="p-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t.placeEdit.name} <span className="text-red-400">*</span>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>
+              {t.placeEdit.name} <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
               type="text"
@@ -114,18 +136,20 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
               onChange={(e) => set('name', e.target.value)}
               placeholder={t.placeEdit.namePlaceholder}
               autoFocus
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={inputStyle}
             />
           </div>
 
           {/* Type + Status */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t.placeEdit.type}</label>
+              <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.placeEdit.type}</label>
               <select
                 value={form.type}
                 onChange={(e) => set('type', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={inputStyle}
               >
                 <option value="hotel">{t.places.hotel}</option>
                 <option value="attraction">{t.places.attraction}</option>
@@ -134,11 +158,12 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t.placeEdit.status}</label>
+              <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.placeEdit.status}</label>
               <select
                 value={form.status}
                 onChange={(e) => set('status', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={inputStyle}
               >
                 <option value="considering">{t.places.considering}</option>
                 <option value="booked">{t.places.booked}</option>
@@ -149,14 +174,15 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
 
           {/* Region */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.placeEdit.region}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.placeEdit.region}</label>
             <input
               type="text"
               list="region-suggestions"
               value={form.region}
               onChange={(e) => set('region', e.target.value)}
               placeholder={t.placeEdit.regionPlaceholder}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={inputStyle}
             />
             {existingRegions.length > 0 && (
               <datalist id="region-suggestions">
@@ -167,34 +193,36 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.placeEdit.description}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.placeEdit.description}</label>
             <textarea
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               placeholder={t.placeEdit.descriptionPlaceholder}
               rows={4}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none"
+              style={inputStyle}
             />
           </div>
 
           {/* Booking URL */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.placeEdit.bookingUrl}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.placeEdit.bookingUrl}</label>
             <input
               type="url"
               value={form.bookingUrl}
               onChange={(e) => set('bookingUrl', e.target.value)}
               placeholder={t.placeEdit.bookingUrlPlaceholder}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={inputStyle}
             />
           </div>
 
           {/* Address / Location geocoding */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>
               {t.placeEdit.address}
               {form.lat && (
-                <span className="ms-2 inline-flex items-center gap-1 text-xs text-green-600 font-normal">
+                <span className="ms-2 inline-flex items-center gap-1 font-normal normal-case tracking-normal" style={{ color: '#16a34a' }}>
                   <CheckCircle2 size={11} />
                   {t.placeEdit.geocoded}
                 </span>
@@ -207,12 +235,19 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
                 onChange={handleAddressChange}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGeoSearch())}
                 placeholder={t.placeEdit.addressPlaceholder}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={{
+                  ...inputStyle,
+                  ...(form.lat ? { background: '#f0fdf4', border: '1px solid #86efac' } : {}),
+                }}
               />
               <button
                 onClick={handleGeoSearch}
                 disabled={geoStatus === 'searching' || !form.address.trim()}
-                className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors disabled:opacity-40"
+                className="p-2 rounded-lg transition-colors disabled:opacity-40"
+                style={{ background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-ink)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-muted)'; }}
                 title={t.placeEdit.geocodeBtn}
               >
                 {geoStatus === 'searching'
@@ -222,17 +257,23 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
               </button>
             </div>
             {geoStatus === 'error' && geoResults.length === 0 && (
-              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: '#ef4444' }}>
                 <AlertCircle size={11} /> {t.placeEdit.geocodeError}
               </p>
             )}
             {geoResults.length > 0 && (
-              <div className="mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <div
+                className="mt-1 rounded-xl overflow-hidden shadow-sm"
+                style={{ border: '1px solid var(--c-border)' }}
+              >
                 {geoResults.map((r, i) => (
                   <button
                     key={i}
                     onClick={() => applyGeoResult(r)}
-                    className="w-full text-start px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-b border-gray-100 last:border-0 transition-colors"
+                    className="w-full text-start px-3 py-2 text-xs transition-colors"
+                    style={{ color: 'var(--c-ink)', borderBottom: i < geoResults.length - 1 ? '1px solid var(--c-border)' : 'none' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--c-amber-light)'}
+                    onMouseLeave={e => e.currentTarget.style.background = ''}
                   >
                     {r.displayName}
                   </button>
@@ -244,21 +285,22 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
           {/* Free Cancellation — hotels only */}
           {form.type === 'hotel' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={labelClass} style={{ color: 'var(--c-muted)' }}>
                 {t.placeEdit.freeCancellation}
               </label>
               <input
                 type="date"
                 value={form.freeCancellation}
                 onChange={(e) => set('freeCancellation', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={inputStyle}
               />
             </div>
           )}
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.placeEdit.tags}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.placeEdit.tags}</label>
             <div className="flex gap-2 mb-2">
               <input
                 type="text"
@@ -266,11 +308,13 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                 placeholder={t.placeEdit.tagsPlaceholder}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={inputStyle}
               />
               <button
                 onClick={addTag}
-                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="p-2 rounded-lg transition-opacity hover:opacity-80"
+                style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
               >
                 <Plus size={16} />
               </button>
@@ -280,10 +324,17 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
                 {form.tags.map((tag, i) => (
                   <span
                     key={i}
-                    className="flex items-center gap-1 bg-gray-100 text-gray-700 text-sm px-2.5 py-1 rounded-full"
+                    className="flex items-center gap-1 text-sm px-2.5 py-1 rounded-full"
+                    style={{ background: 'var(--c-vellum)', color: 'var(--c-ink)', border: '1px solid var(--c-border)' }}
                   >
                     {tag}
-                    <button onClick={() => removeTag(i)} className="text-gray-400 hover:text-red-500 transition-colors">
+                    <button
+                      onClick={() => removeTag(i)}
+                      className="transition-colors"
+                      style={{ color: 'var(--c-muted)' }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
+                    >
                       <X size={11} />
                     </button>
                   </span>
@@ -294,23 +345,31 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.placeEdit.notes}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.placeEdit.notes}</label>
             <textarea
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
               placeholder={t.placeEdit.notesPlaceholder}
               rows={3}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none"
+              style={inputStyle}
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 border-t border-gray-100 sticky bottom-0 bg-white rounded-b-2xl">
+        {/* Footer */}
+        <div
+          className="flex items-center justify-between p-4 sticky bottom-0 rounded-b-2xl"
+          style={{ background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)' }}
+        >
           <div>
             {!isNew && (
               <button
                 onClick={handleDelete}
-                className="flex items-center gap-1.5 text-red-500 hover:text-red-700 text-sm transition-colors"
+                className="flex items-center gap-1.5 text-sm transition-colors"
+                style={{ color: '#ef4444' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#b91c1c'}
+                onMouseLeave={e => e.currentTarget.style.color = '#ef4444'}
               >
                 <Trash2 size={14} />
                 {t.edit.delete}
@@ -320,14 +379,18 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm rounded-lg transition-colors"
+              style={{ background: 'var(--c-vellum)', color: 'var(--c-ink)', border: '1px solid var(--c-border)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--c-border)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--c-vellum)'}
             >
               {t.edit.cancel}
             </button>
             <button
               onClick={handleSave}
               disabled={!form.name.trim()}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm rounded-lg transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
             >
               {t.edit.save}
             </button>

@@ -17,6 +17,15 @@ import { CSS } from '@dnd-kit/utilities';
 
 function uid() { return Math.random().toString(36).slice(2); }
 
+const inputStyle = {
+  background: 'var(--c-vellum)',
+  border: '1px solid var(--c-border)',
+  color: 'var(--c-ink)',
+  '--tw-ring-color': 'var(--c-amber)',
+};
+
+const labelClass = 'block text-xs font-semibold uppercase tracking-wide mb-1.5';
+
 function SortableItem({ item, places, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item._uid });
   const place = item.type === 'place' ? places.find((p) => p.id === item.id) : null;
@@ -24,17 +33,33 @@ function SortableItem({ item, places, onRemove }) {
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-2 bg-white border rounded-lg px-2 py-1.5 text-sm ${
-        isDragging ? 'shadow-lg border-indigo-300 opacity-80' : 'border-gray-200'
-      }`}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        background: isDragging ? 'var(--c-amber-light)' : 'var(--c-vellum)',
+        border: `1px solid ${isDragging ? 'var(--c-amber-mid)' : 'var(--c-border)'}`,
+      }}
+      className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm"
     >
-      <span {...attributes} {...listeners} className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none">
+      <span
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+        style={{ color: 'var(--c-border)' }}
+        onMouseEnter={e => e.currentTarget.style.color = 'var(--c-muted)'}
+        onMouseLeave={e => e.currentTarget.style.color = 'var(--c-border)'}
+      >
         <GripVertical size={14} />
       </span>
-      <MapPin size={11} className={item.type === 'place' ? 'text-indigo-400 shrink-0' : 'text-gray-300 shrink-0'} />
-      <span className="flex-1 text-gray-700 text-xs truncate">{label}</span>
-      <button onClick={() => onRemove(item._uid)} className="text-gray-300 hover:text-red-400 transition-colors">
+      <MapPin size={11} style={{ color: item.type === 'place' ? 'var(--c-amber)' : 'var(--c-border)', flexShrink: 0 }} />
+      <span className="flex-1 text-xs truncate" style={{ color: 'var(--c-ink)' }}>{label}</span>
+      <button
+        onClick={() => onRemove(item._uid)}
+        className="transition-colors"
+        style={{ color: 'var(--c-border)' }}
+        onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+        onMouseLeave={e => e.currentTarget.style.color = 'var(--c-border)'}
+      >
         <X size={12} />
       </button>
     </div>
@@ -61,7 +86,6 @@ export default function DayEditModal({ day, store, t, onClose }) {
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  // Places not already added as items
   const placeSuggestions = store.places.filter(
     (p) =>
       itemInput.trim() &&
@@ -116,13 +140,25 @@ export default function DayEditModal({ day, store, t, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+      <div
+        className="rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="font-bold text-gray-800 text-lg">
+        <div
+          className="flex items-center justify-between p-4 sticky top-0 rounded-t-2xl"
+          style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}
+        >
+          <h3 className="font-bold text-lg" style={{ color: 'var(--c-ink)' }}>
             {isNew ? t.dayEdit.titleAdd : t.dayEdit.titleEdit}
           </h3>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--c-muted)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--c-ink)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
+          >
             <X size={18} />
           </button>
         </div>
@@ -130,36 +166,37 @@ export default function DayEditModal({ day, store, t, onClose }) {
         <div className="p-4 space-y-4">
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t.dayEdit.date} <span className="text-red-400">*</span>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>
+              {t.dayEdit.date} <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
               type="date"
               value={form.date}
               onChange={(e) => set('date', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={inputStyle}
             />
           </div>
 
           {/* Region */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.dayEdit.region}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.dayEdit.region}</label>
             <input
               type="text"
               value={form.region}
               onChange={(e) => set('region', e.target.value)}
               placeholder={t.dayEdit.regionPlaceholder}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={inputStyle}
             />
           </div>
 
-          {/* Items — unified places + free text */}
+          {/* Items */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              מקומות לביקור ביום זה
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>
+              {store.language === 'he' ? 'מקומות לביקור ביום זה' : 'Places to visit this day'}
             </label>
 
-            {/* Current items — draggable */}
             {form.items.length > 0 && (
               <DndContext
                 sensors={sensors}
@@ -182,7 +219,6 @@ export default function DayEditModal({ day, store, t, onClose }) {
               </DndContext>
             )}
 
-            {/* Input with suggestions */}
             <div className="relative">
               <div className="flex gap-2">
                 <input
@@ -195,35 +231,46 @@ export default function DayEditModal({ day, store, t, onClose }) {
                     if (e.key === 'Enter') { e.preventDefault(); addTextItem(); }
                     if (e.key === 'Escape') setShowSuggestions(false);
                   }}
-                  placeholder="הוסף מקום או פעילות..."
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={store.language === 'he' ? 'הוסף מקום או פעילות...' : 'Add place or activity...'}
+                  className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={inputStyle}
                 />
                 <button
                   onClick={() => addTextItem()}
-                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="p-2 rounded-lg transition-opacity hover:opacity-80"
+                  style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
                 >
                   <Plus size={16} />
                 </button>
               </div>
               {showSuggestions && (placeSuggestions.length > 0 || itemInput.trim()) && (
-                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                <ul
+                  className="absolute z-10 w-full rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto"
+                  style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+                >
                   {placeSuggestions.map((place) => (
                     <li
                       key={place.id}
                       onMouseDown={(e) => { e.preventDefault(); clearTimeout(blurTimeout.current); addPlaceItem(place); }}
-                      className="px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer flex items-center gap-2"
+                      className="px-3 py-2 text-sm cursor-pointer flex items-center gap-2 transition-colors"
+                      style={{ color: 'var(--c-ink)', borderBottom: '1px solid var(--c-border)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--c-amber-light)'}
+                      onMouseLeave={e => e.currentTarget.style.background = ''}
                     >
-                      <MapPin size={12} className="text-indigo-400 shrink-0" />
+                      <MapPin size={12} style={{ color: 'var(--c-amber)', flexShrink: 0 }} />
                       {place.name}
                     </li>
                   ))}
                   {itemInput.trim() && (
                     <li
                       onMouseDown={(e) => { e.preventDefault(); clearTimeout(blurTimeout.current); addTextItem(itemInput.trim()); }}
-                      className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer flex items-center gap-2 border-t border-gray-100"
+                      className="px-3 py-2 text-sm cursor-pointer flex items-center gap-2 transition-colors"
+                      style={{ color: 'var(--c-muted)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--c-vellum)'}
+                      onMouseLeave={e => e.currentTarget.style.background = ''}
                     >
-                      <Plus size={12} className="shrink-0" />
-                      הוסף כטקסט: &ldquo;{itemInput.trim()}&rdquo;
+                      <Plus size={12} style={{ flexShrink: 0 }} />
+                      {store.language === 'he' ? `הוסף כטקסט: "${itemInput.trim()}"` : `Add as text: "${itemInput.trim()}"`}
                     </li>
                   )}
                 </ul>
@@ -233,18 +280,17 @@ export default function DayEditModal({ day, store, t, onClose }) {
 
           {/* Accommodation */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.dayEdit.accommodation}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.dayEdit.accommodation}</label>
             {hotels.length > 0 && (
               <select
                 value={form.accommodationId}
                 onChange={handleAccommodationSelect}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 mb-2"
+                style={inputStyle}
               >
                 <option value="">{t.dayEdit.selectPlace}</option>
                 {hotels.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
+                  <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
             )}
@@ -254,54 +300,66 @@ export default function DayEditModal({ day, store, t, onClose }) {
                 value={form.accommodationName}
                 onChange={(e) => set('accommodationName', e.target.value)}
                 placeholder={t.dayEdit.accommodationFree}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={inputStyle}
               />
             )}
             {form.accommodationId && (
               <button
                 onClick={clearAccommodation}
-                className="mt-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                className="mt-1 text-xs transition-colors"
+                style={{ color: 'var(--c-muted)' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
               >
                 ✕ {t.edit.cancel}
               </button>
             )}
           </div>
 
-          {/* Free Cancellation — only when no linked hotel (hotel has its own field) */}
+          {/* Free Cancellation — only when no linked hotel */}
           {!form.accommodationId && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={labelClass} style={{ color: 'var(--c-muted)' }}>
                 {t.dayEdit.freeCancellation}
               </label>
               <input
                 type="date"
                 value={form.freeCancellation}
                 onChange={(e) => set('freeCancellation', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={inputStyle}
               />
             </div>
           )}
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.dayEdit.notes}</label>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.dayEdit.notes}</label>
             <textarea
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
               placeholder={t.dayEdit.notesPlaceholder}
               rows={3}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none"
+              style={inputStyle}
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-gray-100 sticky bottom-0 bg-white rounded-b-2xl">
+        <div
+          className="flex items-center justify-between p-4 sticky bottom-0 rounded-b-2xl"
+          style={{ background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)' }}
+        >
           <div>
             {!isNew && (
               <button
                 onClick={handleDelete}
-                className="flex items-center gap-1.5 text-red-500 hover:text-red-700 text-sm transition-colors"
+                className="flex items-center gap-1.5 text-sm transition-colors"
+                style={{ color: '#ef4444' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#b91c1c'}
+                onMouseLeave={e => e.currentTarget.style.color = '#ef4444'}
               >
                 <Trash2 size={14} />
                 {t.edit.delete}
@@ -311,14 +369,18 @@ export default function DayEditModal({ day, store, t, onClose }) {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm rounded-lg transition-colors"
+              style={{ background: 'var(--c-vellum)', color: 'var(--c-ink)', border: '1px solid var(--c-border)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--c-border)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--c-vellum)'}
             >
               {t.edit.cancel}
             </button>
             <button
               onClick={handleSave}
               disabled={!form.date}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm rounded-lg transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
             >
               {t.edit.save}
             </button>
