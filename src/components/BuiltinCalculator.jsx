@@ -3,7 +3,7 @@ import {
   Car, PersonStanding, Bike, Search, RefreshCw, AlertCircle,
   Clock, Ruler, MapPin, CheckCircle2, ChevronUp, ChevronDown, ChevronsUpDown, X,
 } from 'lucide-react';
-import { photonSearch, getRoute, parseGoogleMapsUrl } from '../routeApi';
+import { photonSearch, photonReverse, getRoute, parseGoogleMapsUrl } from '../routeApi';
 
 const MODES = [
   { key: 'car',     Icon: Car,             label: { he: 'רכב',    en: 'Car' } },
@@ -94,8 +94,9 @@ export default function BuiltinCalculator({ store, t }) {
     const gmCoords = parseGoogleMapsUrl(originText);
     if (gmCoords) {
       setOriginCoords(gmCoords);
-      setOriginText(originText); // keep the URL as display text
       setOriginSuggestions([]);
+      const name = await photonReverse(gmCoords.lat, gmCoords.lon);
+      if (name) setOriginText(name);
       return;
     }
 
@@ -117,13 +118,16 @@ export default function BuiltinCalculator({ store, t }) {
   };
 
   // Auto-detect Google Maps URL on paste/change
-  const handleOriginChange = (e) => {
+  const handleOriginChange = async (e) => {
     const val = e.target.value;
     setOriginText(val);
     if (originCoords) setOriginCoords(null);
     const gmCoords = parseGoogleMapsUrl(val);
     if (gmCoords) {
       setOriginCoords(gmCoords);
+      // Reverse geocode to get a readable name
+      const name = await photonReverse(gmCoords.lat, gmCoords.lon);
+      if (name) setOriginText(name);
     }
   };
 

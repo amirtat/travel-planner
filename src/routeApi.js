@@ -35,6 +35,21 @@ const OSRM_ROUTE = {
 const OSRM_TABLE = 'https://router.project-osrm.org/table/v1/driving'
 
 /**
+ * Reverse geocode coordinates using Photon.
+ * Returns a display name string, or null on failure.
+ */
+export async function photonReverse(lat, lon) {
+  const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
+  const res = await fetch(`${PHOTON_API}reverse?${params}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const f = data.features?.[0];
+  if (!f) return null;
+  const p = f.properties;
+  return [p.name, p.city, p.country].filter(Boolean).join(', ');
+}
+
+/**
  * Search for a place using Photon geocoding.
  * Returns array of { displayName, lat, lon }
  */
