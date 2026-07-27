@@ -1,4 +1,4 @@
-import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock } from 'lucide-react';
+import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock, Navigation } from 'lucide-react';
 
 const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, other: Star };
 const STATUS_STYLES = {
@@ -33,6 +33,12 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
                 >
                   {t.places[place.status] || place.status}
                 </span>
+                {place.region && (
+                  <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--c-muted)' }}>
+                    <Navigation size={10} />
+                    {place.region}
+                  </span>
+                )}
               </div>
             </div>
           </div>

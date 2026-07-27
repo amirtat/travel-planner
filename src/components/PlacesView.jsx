@@ -219,9 +219,13 @@ export default function PlacesView({ store, t }) {
                   </span>
                 </div>
 
-                <h3 className="font-semibold mb-1 line-clamp-2 text-sm" style={{ color: 'var(--c-ink)' }}>
+                <h3 className="font-semibold mb-0.5 line-clamp-2 text-sm" style={{ color: 'var(--c-ink)' }}>
                   {place.name}
                 </h3>
+
+                {place.region && (
+                  <p className="text-xs mb-1" style={{ color: 'var(--c-amber)' }}>{place.region}</p>
+                )}
 
                 <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--c-muted)' }}>
                   {place.description || t.places.noDescription}
