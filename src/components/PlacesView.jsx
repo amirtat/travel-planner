@@ -12,6 +12,8 @@ const STATUS_STYLES = {
 
 export default function PlacesView({ store, t }) {
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+  const [filterRegion, setFilterRegion] = useState('all');
   const [filterTags, setFilterTags] = useState(new Set());
   const [search, setSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -20,8 +22,10 @@ export default function PlacesView({ store, t }) {
   const searchRef = useRef(null);
 
   const STATUSES = ['all', 'booked', 'considering', 'visited'];
+  const TYPES = ['all', 'hotel', 'attraction', 'restaurant', 'other'];
 
   const allTags = [...new Set(store.places.flatMap((p) => p.tags ?? []))].sort();
+  const allRegions = [...new Set(store.places.map((p) => p.region).filter(Boolean))].sort();
 
   const toggleTag = (tag) => {
     setFilterTags((prev) => {
@@ -41,6 +45,8 @@ export default function PlacesView({ store, t }) {
 
   const filtered = store.places.filter((p) => {
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
+    if (filterType !== 'all' && p.type !== filterType) return false;
+    if (filterRegion !== 'all' && p.region !== filterRegion) return false;
     if (filterTags.size > 0 && !([...filterTags].some((tag) => p.tags?.includes(tag)))) return false;
     if (q && !p.name.toLowerCase().includes(q) && !p.description?.toLowerCase().includes(q) && !p.tags?.some((tag) => tag.toLowerCase().includes(q))) return false;
     return true;
@@ -141,6 +147,68 @@ export default function PlacesView({ store, t }) {
             {t.places.addPlace}
           </button>
         </div>
+
+        {/* Type filter */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {TYPES.filter((tp) => tp === 'all' || store.places.some((p) => p.type === tp)).map((tp) => {
+            const count = tp === 'all' ? store.places.length : store.places.filter((p) => p.type === tp).length;
+            const active = filterType === tp;
+            const Icon = tp !== 'all' ? TYPE_ICONS[tp] : null;
+            return (
+              <button
+                key={tp}
+                onClick={() => setFilterType(tp)}
+                className="px-3 py-1.5 text-sm rounded-full transition-all flex items-center gap-1.5"
+                style={{
+                  background: active ? 'var(--c-amber)' : 'var(--c-surface)',
+                  color: active ? 'white' : 'var(--c-muted)',
+                  border: `1px solid ${active ? 'var(--c-amber)' : 'var(--c-border)'}`,
+                }}
+              >
+                {Icon && <Icon size={11} />}
+                {t.places[tp] || tp}
+                <span className="text-xs opacity-60">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Region filter */}
+        {allRegions.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold uppercase tracking-wide shrink-0" style={{ color: 'var(--c-muted)' }}>
+              {store.language === 'he' ? 'איזור:' : 'Region:'}
+            </span>
+            {allRegions.map((region) => {
+              const active = filterRegion === region;
+              return (
+                <button
+                  key={region}
+                  onClick={() => setFilterRegion(active ? 'all' : region)}
+                  className="px-2.5 py-1 text-xs rounded-full transition-all"
+                  style={{
+                    background: active ? 'var(--c-ink)' : 'var(--c-surface)',
+                    color: active ? 'var(--c-vellum)' : 'var(--c-muted)',
+                    border: `1px solid ${active ? 'var(--c-ink)' : 'var(--c-border)'}`,
+                  }}
+                >
+                  {region}
+                </button>
+              );
+            })}
+            {filterRegion !== 'all' && (
+              <button
+                onClick={() => setFilterRegion('all')}
+                className="text-xs ms-1 transition-colors"
+                style={{ color: 'var(--c-muted)' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
+              >
+                ✕ {store.language === 'he' ? 'נקה' : 'Clear'}
+              </button>
+            )}
+          </div>
+        )}
 
         {allTags.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
