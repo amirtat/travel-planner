@@ -9,7 +9,7 @@ export function parseGoogleMapsUrl(text) {
   // Extract place name from /maps/place/Place+Name/ path
   const placeMatch = s.match(/\/maps\/place\/([^/@?&]+)/);
   const name = placeMatch
-    ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
+    ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' ').replace(/_/g, ' '))
     : null;
 
   // @lat,lng (most common in place/search URLs)
