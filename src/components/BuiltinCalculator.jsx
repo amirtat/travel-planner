@@ -60,6 +60,7 @@ export default function BuiltinCalculator({ store, t }) {
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTag, setFilterTag] = useState('');
+  const [filterRegion, setFilterRegion] = useState('');
 
   // Results
   const [results, setResults] = useState([]);
@@ -75,11 +76,13 @@ export default function BuiltinCalculator({ store, t }) {
   const [routeCache, setRouteCache] = useState({});
 
   const allTags = [...new Set(store.places.flatMap((p) => p.tags ?? []))].sort();
+  const allRegions = [...new Set(store.places.map((p) => p.region).filter(Boolean))].sort();
 
   const filteredPlaces = store.places.filter((p) => {
     if (filterType !== 'all' && p.type !== filterType) return false;
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
     if (filterTag && !(p.tags ?? []).includes(filterTag)) return false;
+    if (filterRegion && p.region !== filterRegion) return false;
     return true;
   });
 
@@ -345,6 +348,24 @@ export default function BuiltinCalculator({ store, t }) {
             </div>
           )}
 
+          {/* Region filter */}
+          {allRegions.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                {lang === 'he' ? 'איזור' : 'Region'}
+              </label>
+              <select
+                value={filterRegion}
+                onChange={(e) => setFilterRegion(e.target.value)}
+                className="h-9 rounded-lg px-2 text-sm focus:outline-none"
+                style={{ border: '1px solid var(--c-border)', color: 'var(--c-ink)', background: 'var(--c-surface)' }}
+              >
+                <option value="">{t.places.all}</option>
+                {allRegions.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          )}
+
           {/* Calculate button */}
           <button
             onClick={() => calculate(false)}
@@ -416,6 +437,9 @@ export default function BuiltinCalculator({ store, t }) {
                     <tr key={place.id} className="transition-colors" onMouseEnter={e => e.currentTarget.style.background='var(--c-vellum)'} onMouseLeave={e => e.currentTarget.style.background=''}>
                       <td className="px-3 py-3">
                         <div className="font-medium text-gray-800">{place.name}</div>
+                        {place.region && (
+                          <div className="text-xs mt-0.5" style={{ color: 'var(--c-muted)' }}>{place.region}</div>
+                        )}
                         {place.description && (
                           <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{place.description}</div>
                         )}

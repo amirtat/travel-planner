@@ -93,6 +93,7 @@ export default function DayEditModal({ day, store, t, onClose }) {
       ...f,
       accommodationId: id,
       accommodationName: place?.name ?? '',
+      ...(place?.region ? { region: place.region } : {}),
     }));
   };
 

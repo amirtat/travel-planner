@@ -27,7 +27,7 @@ function getCancelInfo(cancelDate, t, urgentDays = 3, soonDays = 7) {
   if (diff < 0)           return { label: t.cancelStatus.expired, urgent: false, expired: true };
   if (diff === 0)         return { label: `⚠ ${t.cancelStatus.urgent}`, urgent: true };
   if (diff <= urgentDays) return { label: `${diff}d · ${t.cancelStatus.urgent}`, urgent: true };
-  if (diff <= soonDays)   return { label: `${diff}d · ${t.cancelStatus.soon}`, urgent: false };
+  if (diff <= soonDays)   return { label: `${diff}d · ${t.cancelStatus.soon}`, urgent: false, soon: true };
   return { label: `${diff}d · ${t.cancelStatus.safe}`, urgent: false };
 }
 
@@ -47,6 +47,8 @@ function CancelBadge({ info, date, language }) {
     ? { ...baseStyle, color: '#b91c1c', borderColor: '#fca5a5', background: '#fef2f2' }
     : info.urgent
     ? { ...baseStyle, color: '#b91c1c', borderColor: '#fca5a5', background: '#fef2f2' }
+    : info.soon
+    ? { ...baseStyle, color: '#b45309', borderColor: '#fbbf24', background: '#fffbeb' }
     : { ...baseStyle, color: '#15803d', borderColor: '#86efac', background: '#f0fdf4' };
 
   return (
