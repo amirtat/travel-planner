@@ -4,10 +4,10 @@ import PlaceDetailModal from './PlaceDetailModal';
 import PlaceEditModal from './PlaceEditModal';
 
 const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, other: Star };
-const STATUS_COLORS = {
-  booked: 'bg-green-100 text-green-700',
-  considering: 'bg-yellow-100 text-yellow-700',
-  visited: 'bg-blue-100 text-blue-700',
+const STATUS_STYLES = {
+  booked:      { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' },
+  considering: { background: 'var(--c-amber-light)', color: 'var(--c-amber)', border: '1px solid var(--c-amber-mid)' },
+  visited:     { background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' },
 };
 
 export default function PlacesView({ store, t }) {
@@ -58,7 +58,7 @@ export default function PlacesView({ store, t }) {
         {/* Search */}
         <div className="relative" ref={searchRef}>
           <div className="relative flex items-center">
-            <Search size={14} className="absolute start-3 text-gray-400 pointer-events-none" />
+            <Search size={14} className="absolute start-3 pointer-events-none" style={{ color: 'var(--c-muted)' }} />
             <input
               type="text"
               value={search}
@@ -66,28 +66,42 @@ export default function PlacesView({ store, t }) {
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               placeholder={t.places.searchPlaceholder}
-              className="w-full ps-8 pe-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full ps-8 pe-8 py-2 text-sm rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                background: 'var(--c-surface)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-ink)',
+                '--tw-ring-color': 'var(--c-amber)',
+              }}
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute end-2.5 text-gray-400 hover:text-gray-600"
+                className="absolute end-2.5"
+                style={{ color: 'var(--c-muted)' }}
               >
                 <X size={14} />
               </button>
             )}
           </div>
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+            <div
+              className="absolute top-full mt-1 w-full rounded-xl shadow-lg z-20 overflow-hidden"
+              style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+            >
               {suggestions.map((p) => (
                 <button
                   key={p.id}
                   onMouseDown={() => { setSearch(p.name); setShowSuggestions(false); }}
-                  className="w-full text-start px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-2"
+                  className="w-full text-start px-3 py-2 text-sm flex items-center gap-2 transition-colors"
+                  style={{ color: 'var(--c-ink)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--c-amber-light)'}
+                  onMouseLeave={e => e.currentTarget.style.background = ''}
                 >
-                  {(() => { const Icon = TYPE_ICONS[p.type] || Star; return <Icon size={13} className="text-gray-400 shrink-0" />; })()}
+                  {(() => { const Icon = TYPE_ICONS[p.type] || Star; return <Icon size={13} style={{ color: 'var(--c-muted)' }} className="shrink-0" />; })()}
                   <span className="truncate">{p.name}</span>
-                  <span className={`ms-auto text-xs px-1.5 py-0.5 rounded-full shrink-0 ${STATUS_COLORS[p.status] || 'bg-gray-100 text-gray-500'}`}>
+                  <span className="ms-auto text-xs px-1.5 py-0.5 rounded-full shrink-0"
+                    style={STATUS_STYLES[p.status] ?? { background: 'var(--c-vellum)', color: 'var(--c-muted)' }}>
                     {t.places[p.status] || p.status}
                   </span>
                 </button>
@@ -100,27 +114,28 @@ export default function PlacesView({ store, t }) {
           <div className="flex items-center gap-1.5 flex-wrap">
             {STATUSES.map((s) => {
               const count = s === 'all' ? store.places.length : store.places.filter((p) => p.status === s).length;
+              const active = filterStatus === s;
               return (
                 <button
                   key={s}
                   onClick={() => setFilterStatus(s)}
-                  className={`px-3 py-1.5 text-sm rounded-full transition-colors flex items-center gap-1 ${
-                    filterStatus === s
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className="px-3 py-1.5 text-sm rounded-full transition-all flex items-center gap-1"
+                  style={{
+                    background: active ? 'var(--c-ink)' : 'var(--c-surface)',
+                    color: active ? 'var(--c-vellum)' : 'var(--c-muted)',
+                    border: `1px solid ${active ? 'var(--c-ink)' : 'var(--c-border)'}`,
+                  }}
                 >
                   {t.places[s] || s}
-                  <span className={`text-xs ${filterStatus === s ? 'opacity-75' : 'text-gray-400'}`}>
-                    ({count})
-                  </span>
+                  <span className="text-xs opacity-60">({count})</span>
                 </button>
               );
             })}
           </div>
           <button
             onClick={() => setEditPlace('new')}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
           >
             <Plus size={15} />
             {t.places.addPlace}
@@ -133,11 +148,12 @@ export default function PlacesView({ store, t }) {
               <button
                 key={tag}
                 onClick={() => toggleTag(tag)}
-                className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
-                  filterTags.has(tag)
-                    ? 'bg-gray-700 text-white border-gray-700'
-                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                }`}
+                className="px-2.5 py-1 text-xs rounded-full transition-all"
+                style={{
+                  background: filterTags.has(tag) ? 'var(--c-ink)' : 'var(--c-surface)',
+                  color: filterTags.has(tag) ? 'var(--c-vellum)' : 'var(--c-muted)',
+                  border: `1px solid ${filterTags.has(tag) ? 'var(--c-ink)' : 'var(--c-border)'}`,
+                }}
               >
                 {tag}
               </button>
@@ -145,7 +161,10 @@ export default function PlacesView({ store, t }) {
             {filterTags.size > 0 && (
               <button
                 onClick={() => setFilterTags(new Set())}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors ms-1"
+                className="text-xs ms-1 transition-colors"
+                style={{ color: 'var(--c-muted)' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
               >
                 ✕ נקה
               </button>
@@ -156,11 +175,14 @@ export default function PlacesView({ store, t }) {
 
       {/* Grid */}
       {store.places.length === 0 ? (
-        <div className="text-center text-gray-400 py-20 bg-white rounded-xl border border-dashed border-gray-200 text-sm">
+        <div
+          className="text-center py-20 text-sm rounded-xl border border-dashed"
+          style={{ color: 'var(--c-muted)', background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+        >
           {t.places.noPlaces}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-gray-400 py-16 text-sm">
+        <div className="text-center py-16 text-sm" style={{ color: 'var(--c-muted)' }}>
           {t.places.noResults}
         </div>
       ) : (
@@ -171,27 +193,37 @@ export default function PlacesView({ store, t }) {
               <div
                 key={place.id}
                 onClick={() => setViewPlace(place)}
-                className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group"
+                className="rounded-xl p-4 cursor-pointer transition-all"
+                style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--c-amber)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(156,106,34,0.12)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--c-border)';
+                  e.currentTarget.style.boxShadow = '';
+                }}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-gray-100 group-hover:bg-blue-50 rounded-lg transition-colors">
-                      <Icon size={14} className="text-gray-500 group-hover:text-blue-600 transition-colors" />
+                    <div className="p-1.5 rounded-lg" style={{ background: 'var(--c-vellum)' }}>
+                      <Icon size={14} style={{ color: 'var(--c-amber)' }} />
                     </div>
-                    <span className="text-xs text-gray-400">{t.places[place.type] || place.type}</span>
+                    <span className="text-xs" style={{ color: 'var(--c-muted)' }}>{t.places[place.type] || place.type}</span>
                   </div>
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                      STATUS_COLORS[place.status] || 'bg-gray-100 text-gray-600'
-                    }`}
+                    className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+                    style={STATUS_STYLES[place.status] ?? { background: 'var(--c-vellum)', color: 'var(--c-muted)' }}
                   >
                     {t.places[place.status] || place.status}
                   </span>
                 </div>
 
-                <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 text-sm">{place.name}</h3>
+                <h3 className="font-semibold mb-1 line-clamp-2 text-sm" style={{ color: 'var(--c-ink)' }}>
+                  {place.name}
+                </h3>
 
-                <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--c-muted)' }}>
                   {place.description || t.places.noDescription}
                 </p>
 
@@ -201,7 +233,8 @@ export default function PlacesView({ store, t }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-xs hover:underline"
+                    style={{ color: 'var(--c-amber)' }}
                   >
                     <ExternalLink size={10} />
                     {t.places.bookingUrl}
@@ -214,17 +247,17 @@ export default function PlacesView({ store, t }) {
                       <button
                         key={i}
                         onClick={(e) => { e.stopPropagation(); toggleTag(tag); }}
-                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
-                          filterTags.has(tag)
-                            ? 'bg-gray-700 text-white'
-                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                        }`}
+                        className="text-xs px-1.5 py-0.5 rounded transition-all"
+                        style={{
+                          background: filterTags.has(tag) ? 'var(--c-ink)' : 'var(--c-vellum)',
+                          color: filterTags.has(tag) ? 'var(--c-vellum)' : 'var(--c-muted)',
+                        }}
                       >
                         {tag}
                       </button>
                     ))}
                     {place.tags.length > 3 && (
-                      <span className="text-xs text-gray-400">+{place.tags.length - 3}</span>
+                      <span className="text-xs" style={{ color: 'var(--c-muted)' }}>+{place.tags.length - 3}</span>
                     )}
                   </div>
                 )}

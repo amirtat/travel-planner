@@ -106,12 +106,25 @@ export default function SettingsModal({ store, t, onClose }) {
             <label className="block text-sm font-medium text-gray-700 mb-2">{t.settings.cancelThresholds}</label>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-amber-700">{t.settings.cancelUrgent}</span>
+                <span className="flex items-center gap-2 text-sm text-red-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                  {t.settings.cancelUrgent}
+                </span>
                 {numInput(cancelUrgent, setCancelUrgent)}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{t.settings.cancelSoon}</span>
+                <span className="flex items-center gap-2 text-sm text-amber-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
+                  {t.settings.cancelSoon}
+                </span>
                 {numInput(cancelSoon, setCancelSoon)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-sm text-emerald-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                  {t.settings.cancelSafe}
+                </span>
+                <span className="w-16 text-center text-sm text-gray-400">{cancelSoon}+</span>
               </div>
             </div>
           </div>

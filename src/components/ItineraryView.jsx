@@ -46,8 +46,8 @@ function CancelBadge({ info, date, language }) {
   const style = info.expired
     ? { ...baseStyle, color: '#b91c1c', borderColor: '#fca5a5', background: '#fef2f2' }
     : info.urgent
-    ? { ...baseStyle, color: '#b45309', borderColor: '#fcd34d', background: '#fffbeb' }
-    : { ...baseStyle, color: 'var(--c-muted)', borderColor: 'var(--c-border)', background: 'var(--c-vellum)' };
+    ? { ...baseStyle, color: '#b91c1c', borderColor: '#fca5a5', background: '#fef2f2' }
+    : { ...baseStyle, color: '#15803d', borderColor: '#86efac', background: '#f0fdf4' };
 
   return (
     <span style={style} className={info.urgent && !info.expired ? 'animate-amber-pulse' : ''}>
@@ -96,11 +96,11 @@ export default function ItineraryView({ store, t }) {
         </div>
       ) : (
         <div className="relative">
-          {/* Vertical timeline rail (logical inline-end = right in RTL, left in LTR) */}
+          {/* Vertical timeline rail — inline-start = right in RTL, left in LTR */}
           <div
             className="absolute top-8 bottom-8 w-px pointer-events-none"
             style={{
-              insetInlineEnd: '3.35rem',
+              insetInlineStart: '3.35rem',
               background: 'linear-gradient(to bottom, transparent, var(--c-amber) 8%, var(--c-amber) 92%, transparent)',
               opacity: 0.18,
             }}
@@ -134,7 +134,7 @@ export default function ItineraryView({ store, t }) {
                     <div
                       className="flex items-center gap-2 text-xs px-3 py-2 rounded-xl mb-3"
                       style={{
-                        marginInlineEnd: '5.5rem',
+                        marginInlineStart: '5.5rem',
                         background: 'rgba(156,106,34,0.08)',
                         border: '1px solid var(--c-amber-mid)',
                         color: 'var(--c-amber)',
@@ -145,8 +145,50 @@ export default function ItineraryView({ store, t }) {
                     </div>
                   )}
 
-                  {/* Day row: [card] [date column] in RTL */}
+                  {/* Day row: [date column] [card] — date is inline-start (right in RTL, left in LTR) */}
                   <div className={`flex gap-5 items-start ${isPast ? 'opacity-55' : ''}`}>
+
+                    {/* Date column (inline-start → right in RTL, left in LTR) */}
+                    <div className="shrink-0 w-16 text-end relative pt-1.5">
+                      {/* Timeline dot */}
+                      <div
+                        className="absolute z-10 rounded-full"
+                        style={{
+                          width:  isToday ? 11 : 7,
+                          height: isToday ? 11 : 7,
+                          top: 20,
+                          insetInlineEnd: isToday ? -4 : -3,
+                          background: isToday ? 'var(--c-amber)' : 'var(--c-border)',
+                          outline: isToday ? '3px solid var(--c-amber-light)' : 'none',
+                        }}
+                      />
+                      {/* Big ghost day number */}
+                      <div
+                        className="leading-none select-none"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '2.25rem',
+                          fontWeight: 500,
+                          color: isToday ? 'var(--c-amber)' : 'var(--c-ink)',
+                          opacity: isToday ? 0.85 : 0.14,
+                          letterSpacing: '-0.03em',
+                        }}
+                      >
+                        {dayNum}
+                      </div>
+                      <div
+                        className="text-[10px] uppercase tracking-widest"
+                        style={{ color: 'var(--c-muted)', fontFamily: 'var(--font-body)' }}
+                      >
+                        {getDayName(day.date, t.dayNames)}
+                      </div>
+                      <div
+                        className="text-[10px] mt-0.5"
+                        style={{ fontFamily: 'var(--font-mono)', color: 'var(--c-muted)', opacity: 0.6 }}
+                      >
+                        {monthStr}
+                      </div>
+                    </div>
 
                     {/* Card */}
                     <div
@@ -276,47 +318,6 @@ export default function ItineraryView({ store, t }) {
                       )}
                     </div>
 
-                    {/* Date column (logical inline-end → right in RTL) */}
-                    <div className="shrink-0 w-16 text-end relative pt-1.5">
-                      {/* Timeline dot */}
-                      <div
-                        className="absolute z-10 rounded-full"
-                        style={{
-                          width:  isToday ? 11 : 7,
-                          height: isToday ? 11 : 7,
-                          top: 20,
-                          insetInlineEnd: -6,
-                          background: isToday ? 'var(--c-amber)' : 'var(--c-border)',
-                          outline: isToday ? '3px solid var(--c-amber-light)' : 'none',
-                        }}
-                      />
-                      {/* Big ghost day number */}
-                      <div
-                        className="leading-none select-none"
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '2.25rem',
-                          fontWeight: 500,
-                          color: isToday ? 'var(--c-amber)' : 'var(--c-ink)',
-                          opacity: isToday ? 0.85 : 0.14,
-                          letterSpacing: '-0.03em',
-                        }}
-                      >
-                        {dayNum}
-                      </div>
-                      <div
-                        className="text-[10px] uppercase tracking-widest"
-                        style={{ color: 'var(--c-muted)', fontFamily: 'var(--font-body)' }}
-                      >
-                        {getDayName(day.date, t.dayNames)}
-                      </div>
-                      <div
-                        className="text-[10px] mt-0.5"
-                        style={{ fontFamily: 'var(--font-mono)', color: 'var(--c-muted)', opacity: 0.6 }}
-                      >
-                        {monthStr}
-                      </div>
-                    </div>
                   </div>
                 </div>
               );

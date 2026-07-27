@@ -202,7 +202,7 @@ export default function BuiltinCalculator({ store, t }) {
     <div className="space-y-4">
 
       {/* Controls card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+      <div className="rounded-xl p-4 space-y-4" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
 
         {/* Origin */}
         <div>
@@ -218,9 +218,12 @@ export default function BuiltinCalculator({ store, t }) {
                   onChange={handleOriginChange}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchOrigin())}
                   placeholder={lang === 'he' ? 'חפש כתובת או הדבק קישור Google Maps...' : 'Search address or paste Google Maps link...'}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pe-8 ${
-                    originCoords ? 'border-green-300 bg-green-50' : 'border-gray-200'
-                  }`}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 pe-8"
+                style={{
+                  background: originCoords ? '#f0fdf4' : 'var(--c-vellum)',
+                  border: `1px solid ${originCoords ? '#86efac' : 'var(--c-border)'}`,
+                  color: 'var(--c-ink)',
+                }}
                 />
                 {originText && (
                   <button onClick={clearOrigin} className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
@@ -231,7 +234,8 @@ export default function BuiltinCalculator({ store, t }) {
               <button
                 onClick={searchOrigin}
                 disabled={originSearching || !originText.trim()}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg disabled:opacity-40 transition-opacity hover:opacity-80 whitespace-nowrap"
+              style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
               >
                 {originSearching ? <RefreshCw size={14} className="animate-spin" /> : <Search size={14} />}
                 {lang === 'he' ? 'חפש' : 'Search'}
@@ -268,14 +272,16 @@ export default function BuiltinCalculator({ store, t }) {
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               {lang === 'he' ? 'אמצעי תחבורה' : 'Travel Mode'}
             </label>
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden h-9">
+            <div className="flex rounded-lg overflow-hidden h-9" style={{ border: '1px solid var(--c-border)' }}>
               {MODES.map(({ key, Icon, label }) => (
                 <button
                   key={key}
                   onClick={() => setMode(key)}
-                  className={`flex items-center justify-center gap-1 px-3 text-xs font-medium transition-colors ${
-                    mode === key ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
-                  }`}
+                  className="flex items-center justify-center gap-1 px-3 text-xs font-medium transition-all"
+                  style={{
+                    background: mode === key ? 'var(--c-ink)' : 'var(--c-surface)',
+                    color: mode === key ? 'var(--c-vellum)' : 'var(--c-muted)',
+                  }}
                   title={label[lang]}
                 >
                   <Icon size={13} />
@@ -293,7 +299,8 @@ export default function BuiltinCalculator({ store, t }) {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="h-9 border border-gray-200 rounded-lg px-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-9 rounded-lg px-2 text-sm focus:outline-none"
+              style={{ border: '1px solid var(--c-border)', color: 'var(--c-ink)', background: 'var(--c-surface)' }}
             >
               <option value="all">{t.places.all}</option>
               {TYPES.map((tp) => (
@@ -304,13 +311,14 @@ export default function BuiltinCalculator({ store, t }) {
 
           {/* Status filter */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--c-muted)' }}>
               {lang === 'he' ? 'סטטוס' : 'Status'}
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="h-9 border border-gray-200 rounded-lg px-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-9 rounded-lg px-2 text-sm focus:outline-none"
+              style={{ border: '1px solid var(--c-border)', color: 'var(--c-ink)', background: 'var(--c-surface)' }}
             >
               <option value="all">{t.places.all}</option>
               <option value="booked">{t.places.booked}</option>
@@ -328,7 +336,8 @@ export default function BuiltinCalculator({ store, t }) {
               <select
                 value={filterTag}
                 onChange={(e) => setFilterTag(e.target.value)}
-                className="h-9 border border-gray-200 rounded-lg px-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-9 rounded-lg px-2 text-sm focus:outline-none"
+                style={{ border: '1px solid var(--c-border)', color: 'var(--c-ink)', background: 'var(--c-surface)' }}
               >
                 <option value="">{t.places.all}</option>
                 {allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
@@ -340,7 +349,8 @@ export default function BuiltinCalculator({ store, t }) {
           <button
             onClick={() => calculate(false)}
             disabled={loading || !originCoords || geocodedPlaces.length === 0}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-9 ms-auto"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-opacity hover:opacity-80 h-9 ms-auto"
+            style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
           >
             {loading ? <RefreshCw size={14} className="animate-spin" /> : <Search size={14} />}
             {loading
@@ -387,11 +397,11 @@ export default function BuiltinCalculator({ store, t }) {
 
       {/* Results */}
       {sortedResults.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="rounded-xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
+                <tr style={{ background: 'var(--c-vellum)', borderBottom: '1px solid var(--c-border)' }}>
                   <SortHeader col="name"     label={lang === 'he' ? 'מקום'    : 'Place'}    sortCol={sortCol} sortAsc={sortAsc} onSort={handleSort} />
                   <SortHeader col="type"     label={lang === 'he' ? 'סוג'     : 'Type'}     sortCol={sortCol} sortAsc={sortAsc} onSort={handleSort} />
                   <SortHeader col="duration" label={lang === 'he' ? 'זמן נסיעה' : 'Time'}  sortCol={sortCol} sortAsc={sortAsc} onSort={handleSort} />
@@ -403,7 +413,7 @@ export default function BuiltinCalculator({ store, t }) {
                 {sortedResults.map(({ place, distance_km, duration_min, error, fromCache }) => {
                   const badge = timeBadge(duration_min, store.travelGreenMax ?? 30, store.travelYellowMax ?? 60);
                   return (
-                    <tr key={place.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={place.id} className="transition-colors" onMouseEnter={e => e.currentTarget.style.background='var(--c-vellum)'} onMouseLeave={e => e.currentTarget.style.background=''}>
                       <td className="px-3 py-3">
                         <div className="font-medium text-gray-800">{place.name}</div>
                         {place.description && (
@@ -438,7 +448,7 @@ export default function BuiltinCalculator({ store, t }) {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center gap-5 flex-wrap">
+          <div className="px-4 py-2.5 flex items-center gap-5 flex-wrap" style={{ background: 'var(--c-vellum)', borderTop: '1px solid var(--c-border)' }}>
             {(() => {
               const g = store.travelGreenMax ?? 30;
               const y = store.travelYellowMax ?? 60;

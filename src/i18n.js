@@ -98,6 +98,7 @@ const TRANSLATIONS = {
       cancelThresholds: 'ביטול חינם – התראות (ימים)',
       cancelUrgent: 'דחוף – עד',
       cancelSoon: 'בקרוב – עד',
+      cancelSafe: 'בטוח – מעל',
     },
     dayNames: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
     cancelStatus: {
@@ -206,6 +207,7 @@ const TRANSLATIONS = {
       cancelThresholds: 'Free Cancellation Alerts (days)',
       cancelUrgent: 'Urgent – up to',
       cancelSoon: 'Soon – up to',
+      cancelSafe: 'Safe – above',
     },
     dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     cancelStatus: {
