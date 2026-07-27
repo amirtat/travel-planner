@@ -27,7 +27,8 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
     const val = e.target.value;
     const gmCoords = parseGoogleMapsUrl(val);
     if (gmCoords) {
-      setForm((f) => ({ ...f, address: val, lat: gmCoords.lat, lon: gmCoords.lon }));
+      const address = gmCoords.name || val;
+      setForm((f) => ({ ...f, address, lat: gmCoords.lat, lon: gmCoords.lon }));
       setGeoStatus('idle');
       setGeoResults([]);
     } else {
@@ -43,7 +44,8 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
     // If it's a Google Maps URL, extract directly
     const gmCoords = parseGoogleMapsUrl(q);
     if (gmCoords) {
-      setForm((f) => ({ ...f, lat: gmCoords.lat, lon: gmCoords.lon }));
+      const address = gmCoords.name || q;
+      setForm((f) => ({ ...f, address, lat: gmCoords.lat, lon: gmCoords.lon }));
       setGeoStatus('idle');
       return;
     }

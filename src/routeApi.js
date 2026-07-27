@@ -6,17 +6,23 @@ export function parseGoogleMapsUrl(text) {
   const s = (text ?? '').trim();
   if (!s.includes('google') && !s.includes('goo.gl') && !s.includes('maps.app')) return null;
 
+  // Extract place name from /maps/place/Place+Name/ path
+  const placeMatch = s.match(/\/maps\/place\/([^/@?&]+)/);
+  const name = placeMatch
+    ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
+    : null;
+
   // @lat,lng (most common in place/search URLs)
   const atMatch = s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
-  if (atMatch) return { lat: parseFloat(atMatch[1]), lon: parseFloat(atMatch[2]) };
+  if (atMatch) return { lat: parseFloat(atMatch[1]), lon: parseFloat(atMatch[2]), name };
 
   // ?q=lat,lng or &q=lat,lng
   const qMatch = s.match(/[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
-  if (qMatch) return { lat: parseFloat(qMatch[1]), lon: parseFloat(qMatch[2]) };
+  if (qMatch) return { lat: parseFloat(qMatch[1]), lon: parseFloat(qMatch[2]), name };
 
   // ll=lat,lng (older format)
   const llMatch = s.match(/ll=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
-  if (llMatch) return { lat: parseFloat(llMatch[1]), lon: parseFloat(llMatch[2]) };
+  if (llMatch) return { lat: parseFloat(llMatch[1]), lon: parseFloat(llMatch[2]), name };
 
   return null; // shortened URL (goo.gl) — can't extract client-side
 }

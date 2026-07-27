@@ -95,8 +95,12 @@ export default function BuiltinCalculator({ store, t }) {
     if (gmCoords) {
       setOriginCoords(gmCoords);
       setOriginSuggestions([]);
-      const name = await photonReverse(gmCoords.lat, gmCoords.lon);
-      if (name) setOriginText(name);
+      if (gmCoords.name) {
+        setOriginText(gmCoords.name);
+      } else {
+        const name = await photonReverse(gmCoords.lat, gmCoords.lon);
+        if (name) setOriginText(name);
+      }
       return;
     }
 
@@ -125,9 +129,12 @@ export default function BuiltinCalculator({ store, t }) {
     const gmCoords = parseGoogleMapsUrl(val);
     if (gmCoords) {
       setOriginCoords(gmCoords);
-      // Reverse geocode to get a readable name
-      const name = await photonReverse(gmCoords.lat, gmCoords.lon);
-      if (name) setOriginText(name);
+      if (gmCoords.name) {
+        setOriginText(gmCoords.name);
+      } else {
+        const name = await photonReverse(gmCoords.lat, gmCoords.lon);
+        if (name) setOriginText(name);
+      }
     }
   };
 
