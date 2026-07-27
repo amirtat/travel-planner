@@ -3,7 +3,7 @@ import {
   Car, PersonStanding, Bike, Search, RefreshCw, AlertCircle,
   Clock, Ruler, MapPin, CheckCircle2, ChevronUp, ChevronDown, ChevronsUpDown, X,
 } from 'lucide-react';
-import { photonSearch, getRoute } from '../routeApi';
+import { photonSearch, getRoute, parseGoogleMapsUrl } from '../routeApi';
 
 const MODES = [
   { key: 'car',     Icon: Car,             label: { he: 'רכב',    en: 'Car' } },
@@ -89,6 +89,16 @@ export default function BuiltinCalculator({ store, t }) {
   // Origin search
   const searchOrigin = async () => {
     if (!originText.trim()) return;
+
+    // Try Google Maps URL first
+    const gmCoords = parseGoogleMapsUrl(originText);
+    if (gmCoords) {
+      setOriginCoords(gmCoords);
+      setOriginText(originText); // keep the URL as display text
+      setOriginSuggestions([]);
+      return;
+    }
+
     setOriginSearching(true);
     setOriginSuggestions([]);
     try {
@@ -104,6 +114,17 @@ export default function BuiltinCalculator({ store, t }) {
     setOriginText(r.displayName);
     setOriginCoords({ lat: r.lat, lon: r.lon });
     setOriginSuggestions([]);
+  };
+
+  // Auto-detect Google Maps URL on paste/change
+  const handleOriginChange = (e) => {
+    const val = e.target.value;
+    setOriginText(val);
+    if (originCoords) setOriginCoords(null);
+    const gmCoords = parseGoogleMapsUrl(val);
+    if (gmCoords) {
+      setOriginCoords(gmCoords);
+    }
   };
 
   const clearOrigin = () => {
@@ -183,12 +204,9 @@ export default function BuiltinCalculator({ store, t }) {
                 <input
                   type="text"
                   value={originText}
-                  onChange={(e) => {
-                    setOriginText(e.target.value);
-                    if (originCoords) setOriginCoords(null);
-                  }}
+                  onChange={handleOriginChange}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), searchOrigin())}
-                  placeholder={lang === 'he' ? 'חפש כתובת...' : 'Search address...'}
+                  placeholder={lang === 'he' ? 'חפש כתובת או הדבק קישור Google Maps...' : 'Search address or paste Google Maps link...'}
                   className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pe-8 ${
                     originCoords ? 'border-green-300 bg-green-50' : 'border-gray-200'
                   }`}
@@ -210,7 +228,10 @@ export default function BuiltinCalculator({ store, t }) {
             </div>
             {originCoords && (
               <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                <CheckCircle2 size={11} /> {lang === 'he' ? 'מיקום אומת' : 'Location confirmed'}
+                <CheckCircle2 size={11} />
+                {parseGoogleMapsUrl(originText)
+                  ? (lang === 'he' ? 'קואורדינטות מ-Google Maps' : 'Coordinates from Google Maps')
+                  : (lang === 'he' ? 'מיקום אומת' : 'Location confirmed')}
               </p>
             )}
             {originSuggestions.length > 0 && (

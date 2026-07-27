@@ -1,3 +1,26 @@
+/**
+ * Parse a Google Maps URL and extract { lat, lon }, or return null.
+ * Supports: full google.com/maps URLs with @lat,lng or ?q=lat,lng
+ */
+export function parseGoogleMapsUrl(text) {
+  const s = (text ?? '').trim();
+  if (!s.includes('google') && !s.includes('goo.gl') && !s.includes('maps.app')) return null;
+
+  // @lat,lng (most common in place/search URLs)
+  const atMatch = s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if (atMatch) return { lat: parseFloat(atMatch[1]), lon: parseFloat(atMatch[2]) };
+
+  // ?q=lat,lng or &q=lat,lng
+  const qMatch = s.match(/[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if (qMatch) return { lat: parseFloat(qMatch[1]), lon: parseFloat(qMatch[2]) };
+
+  // ll=lat,lng (older format)
+  const llMatch = s.match(/ll=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if (llMatch) return { lat: parseFloat(llMatch[1]), lon: parseFloat(llMatch[2]) };
+
+  return null; // shortened URL (goo.gl) — can't extract client-side
+}
+
 // Photon geocoding (komoot.io)
 const PHOTON_API = 'https://photon.komoot.io/api/'
 

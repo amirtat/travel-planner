@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, Search, CheckCircle2, AlertCircle } from 'lucide-react';
-import { photonSearch } from '../routeApi';
+import { photonSearch, parseGoogleMapsUrl } from '../routeApi';
 
 export default function PlaceEditModal({ place, store, t, onClose }) {
   const isNew = !place;
@@ -23,9 +23,30 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
+  const handleAddressChange = (e) => {
+    const val = e.target.value;
+    const gmCoords = parseGoogleMapsUrl(val);
+    if (gmCoords) {
+      setForm((f) => ({ ...f, address: val, lat: gmCoords.lat, lon: gmCoords.lon }));
+      setGeoStatus('idle');
+      setGeoResults([]);
+    } else {
+      setForm((f) => ({ ...f, address: val, lat: null, lon: null }));
+      setGeoResults([]);
+      setGeoStatus('idle');
+    }
+  };
+
   const handleGeoSearch = async () => {
     const q = form.address.trim();
     if (!q) return;
+    // If it's a Google Maps URL, extract directly
+    const gmCoords = parseGoogleMapsUrl(q);
+    if (gmCoords) {
+      setForm((f) => ({ ...f, lat: gmCoords.lat, lon: gmCoords.lon }));
+      setGeoStatus('idle');
+      return;
+    }
     setGeoStatus('searching');
     setGeoResults([]);
     try {
@@ -161,12 +182,7 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
               <input
                 type="text"
                 value={form.address}
-                onChange={(e) => {
-                  set('address', e.target.value);
-                  if (form.lat) setForm((f) => ({ ...f, lat: null, lon: null }));
-                  setGeoResults([]);
-                  setGeoStatus('idle');
-                }}
+                onChange={handleAddressChange}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGeoSearch())}
                 placeholder={t.placeEdit.addressPlaceholder}
                 className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
