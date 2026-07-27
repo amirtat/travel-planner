@@ -1,10 +1,10 @@
 import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock } from 'lucide-react';
 
 const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, other: Star };
-const STATUS_COLORS = {
-  booked: 'bg-green-100 text-green-700',
-  considering: 'bg-yellow-100 text-yellow-700',
-  visited: 'bg-blue-100 text-blue-700',
+const STATUS_STYLES = {
+  booked:      { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' },
+  considering: { background: 'var(--c-amber-light)', color: 'var(--c-amber)', border: '1px solid var(--c-amber-mid)' },
+  visited:     { background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' },
 };
 
 export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
@@ -13,28 +13,36 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+      <div
+        className="rounded-2xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+      >
         {/* Header */}
-        <div className="flex items-start justify-between p-4 border-b border-gray-100">
+        <div className="flex items-start justify-between p-4 sticky top-0 rounded-t-2xl" style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="p-2 bg-blue-50 rounded-xl shrink-0">
-              <Icon size={18} className="text-blue-600" />
+            <div className="p-2 rounded-xl shrink-0" style={{ background: 'var(--c-amber-light)' }}>
+              <Icon size={18} style={{ color: 'var(--c-amber)' }} />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-gray-800 text-lg leading-tight">{place.name}</h3>
+              <h3 className="font-bold text-lg leading-tight" style={{ color: 'var(--c-ink)' }}>{place.name}</h3>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span className="text-xs text-gray-400">{t.places[place.type] || place.type}</span>
+                <span className="text-xs" style={{ color: 'var(--c-muted)' }}>{t.places[place.type] || place.type}</span>
                 <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    STATUS_COLORS[place.status] || 'bg-gray-100 text-gray-600'
-                  }`}
+                  className="text-xs px-2 py-0.5 rounded-full font-medium"
+                  style={STATUS_STYLES[place.status] ?? { background: 'var(--c-vellum)', color: 'var(--c-muted)' }}
                 >
                   {t.places[place.status] || place.status}
                 </span>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg shrink-0 ms-2">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg shrink-0 ms-2 transition-colors"
+            style={{ color: 'var(--c-muted)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--c-ink)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
+          >
             <X size={18} />
           </button>
         </div>
@@ -42,9 +50,9 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
         <div className="p-4 space-y-4">
           {/* Free Cancellation */}
           {place.freeCancellation && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Clock size={13} className="text-gray-400 shrink-0" />
-              <span>{t.placeEdit.freeCancellation}: <span className="font-medium">{place.freeCancellation}</span></span>
+            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--c-muted)' }}>
+              <Clock size={13} className="shrink-0" />
+              <span>{t.placeEdit.freeCancellation}: <span className="font-medium" style={{ color: 'var(--c-ink)' }}>{place.freeCancellation}</span></span>
             </div>
           )}
 
@@ -54,7 +62,8 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
               href={place.bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-blue-600 hover:underline text-sm"
+              className="flex items-center gap-2 text-sm hover:underline"
+              style={{ color: 'var(--c-amber)' }}
             >
               <ExternalLink size={13} />
               {t.places.bookingUrl}
@@ -63,14 +72,20 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
 
           {/* Description */}
           {place.description && (
-            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{place.description}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--c-ink)' }}>
+              {place.description}
+            </p>
           )}
 
           {/* Tags */}
           {place.tags?.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {place.tags.map((tag, i) => (
-                <span key={i} className="text-sm bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full">
+                <span
+                  key={i}
+                  className="text-sm px-2.5 py-0.5 rounded-full"
+                  style={{ background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }}
+                >
                   {tag}
                 </span>
               ))}
@@ -79,23 +94,26 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
 
           {/* Notes */}
           {place.notes && (
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{place.notes}</p>
+            <div className="rounded-xl p-3" style={{ background: 'var(--c-vellum)' }}>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--c-ink)' }}>{place.notes}</p>
             </div>
           )}
 
           {/* Used in days */}
           {usedInDays.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+              <p className="text-xs font-semibold uppercase tracking-wide mb-2 flex items-center gap-1" style={{ color: 'var(--c-muted)' }}>
                 <Calendar size={11} />
                 {t.places.usedInDays}
               </p>
               <div className="space-y-1">
                 {usedInDays.map((d) => (
-                  <div key={d.id} className="text-sm text-gray-600 bg-blue-50 px-3 py-1.5 rounded-lg">
-                    {d.date}
-                    {d.region ? ` · ${d.region}` : ''}
+                  <div
+                    key={d.id}
+                    className="text-sm px-3 py-1.5 rounded-lg"
+                    style={{ background: 'var(--c-amber-light)', color: 'var(--c-ink)', border: '1px solid var(--c-amber-mid)' }}
+                  >
+                    {d.date}{d.region ? ` · ${d.region}` : ''}
                   </div>
                 ))}
               </div>
@@ -104,10 +122,13 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
         </div>
 
         {onEdit && (
-          <div className="flex justify-end p-4 border-t border-gray-100">
+          <div className="flex justify-end p-4" style={{ borderTop: '1px solid var(--c-border)' }}>
             <button
               onClick={onEdit}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors"
+              style={{ background: 'var(--c-vellum)', color: 'var(--c-ink)', border: '1px solid var(--c-border)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-ink)'; e.currentTarget.style.color = 'var(--c-vellum)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--c-vellum)'; e.currentTarget.style.color = 'var(--c-ink)'; }}
             >
               <Pencil size={13} />
               {t.edit.edit}

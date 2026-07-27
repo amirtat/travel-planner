@@ -15,12 +15,40 @@ function formatDist(meters) {
   return `${Math.round(meters / 100) / 10} ק"מ`;
 }
 
-// Nearest-neighbor TSP on a subset of indices, starting from startIdx
-// Returns ordered list of those indices
-function nearestNeighborSubset(matrix, indices, startIdx) {
-  const remaining = new Set(indices.filter((i) => i !== startIdx));
-  const order = [startIdx];
-  let current = startIdx;
+// ── Optimization algorithms ────────────────────────────────────────────────
+
+// Cost of a middle-stop order given fixed prev/next endpoints
+function pathCost(matrix, order, prevIdx, nextIdx) {
+  if (order.length === 0) return 0;
+  let cost = 0;
+  if (prevIdx !== null) cost += matrix[prevIdx][order[0]];
+  for (let i = 0; i < order.length - 1; i++) cost += matrix[order[i]][order[i + 1]];
+  if (nextIdx !== null) cost += matrix[order[order.length - 1]][nextIdx];
+  return cost;
+}
+
+// Generate all permutations of an array
+function* permutations(arr) {
+  if (arr.length <= 1) { yield arr; return; }
+  for (let i = 0; i < arr.length; i++) {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+    for (const perm of permutations(rest)) yield [arr[i], ...perm];
+  }
+}
+
+// Nearest-neighbor from a departure point (prevIdx may be null → start freely)
+function nearestNeighbor(matrix, indices, prevIdx) {
+  if (indices.length === 0) return [];
+  const remaining = new Set(indices);
+  const order = [];
+  let current = prevIdx;
+
+  if (current === null) {
+    current = indices[0];
+    remaining.delete(current);
+    order.push(current);
+  }
+
   while (remaining.size > 0) {
     let best = -1, bestCost = Infinity;
     for (const j of remaining) {
@@ -34,12 +62,69 @@ function nearestNeighborSubset(matrix, indices, startIdx) {
   return order;
 }
 
+// 2-opt local search on middle indices with fixed endpoints
+function twoOpt(matrix, order, prevIdx, nextIdx) {
+  if (order.length <= 2) return order;
+  let best = order;
+  let bestCost = pathCost(matrix, order, prevIdx, nextIdx);
+  let improved = true;
+  while (improved) {
+    improved = false;
+    for (let i = 0; i < best.length - 1; i++) {
+      for (let k = i + 1; k < best.length; k++) {
+        const candidate = [
+          ...best.slice(0, i),
+          ...best.slice(i, k + 1).reverse(),
+          ...best.slice(k + 1),
+        ];
+        const cost = pathCost(matrix, candidate, prevIdx, nextIdx);
+        if (cost < bestCost) {
+          best = candidate;
+          bestCost = cost;
+          improved = true;
+        }
+      }
+    }
+  }
+  return best;
+}
+
+// Main optimizer: exact for ≤8 stops, nearest-neighbor+2-opt for more
+function optimizeMiddle(matrix, middleIndices, prevIdx, nextIdx) {
+  if (middleIndices.length === 0) return [];
+  if (middleIndices.length === 1) return middleIndices;
+
+  if (middleIndices.length <= 8) {
+    // Exact: try every permutation
+    let bestOrder = middleIndices;
+    let bestCost = pathCost(matrix, middleIndices, prevIdx, nextIdx);
+    for (const perm of permutations(middleIndices)) {
+      const cost = pathCost(matrix, perm, prevIdx, nextIdx);
+      if (cost < bestCost) { bestCost = cost; bestOrder = [...perm]; }
+    }
+    return bestOrder;
+  }
+
+  // For larger n: nearest-neighbor from each possible start + 2-opt, keep best
+  let bestOrder = null;
+  let bestCost = Infinity;
+  const startCandidates = prevIdx !== null ? [prevIdx] : middleIndices;
+  for (const startFrom of startCandidates) {
+    const nn = nearestNeighbor(matrix, middleIndices, startFrom === prevIdx ? prevIdx : null);
+    const opt = twoOpt(matrix, nn, prevIdx, nextIdx);
+    const cost = pathCost(matrix, opt, prevIdx, nextIdx);
+    if (cost < bestCost) { bestCost = cost; bestOrder = opt; }
+  }
+  return bestOrder ?? middleIndices;
+}
+
+// ── Component ──────────────────────────────────────────────────────────────
+
 export default function DayInsightsPanel({ day, places, store, prevPlace }) {
   const [status, setStatus] = useState('idle');
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // --- Build the 3-part route: start → middle stops → end ---
   const currentHotel = day.accommodationId
     ? places.find((p) => p.id === day.accommodationId)
     : null;
@@ -52,10 +137,8 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
     .map((id) => places.find((p) => p.id === id))
     .filter(Boolean);
 
-  // startPlace: previous day's hotel (preferred) or null
   const startPlace = prevPlace ?? null;
 
-  // Roles for display
   const startNode  = startPlace  ? { ...startPlace,  role: 'start' } : null;
   const endNode    = currentHotel ? { ...currentHotel, role: 'end'  } : null;
   const middleNodes = middlePlaces.map((p) => ({ ...p, role: 'stop' }));
@@ -68,29 +151,25 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
 
   const geocodedNodes = allNodes.filter((n) => n.lat != null && n.lon != null);
   const missingCoords = allNodes.length - geocodedNodes.length;
-
-  // Need at least 2 points to calculate
   const canCalculate = geocodedNodes.length >= 2;
 
-  // --- Insufficient data messages ---
   if (allNodes.length < 2) {
     if (!startNode && !endNode) {
       return (
-        <div className="px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100 italic">
+        <div className="px-4 py-2 text-xs italic" style={{ color: 'var(--c-muted)', background: 'var(--c-vellum)', borderTop: '1px solid var(--c-border)' }}>
           הוסף לינה ועצירות ביום זה כדי לחשב מסלול
         </div>
       );
     }
     if (middleNodes.length === 0 && (!startNode || !endNode)) {
       return (
-        <div className="px-4 py-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100 italic">
+        <div className="px-4 py-2 text-xs italic" style={{ color: 'var(--c-muted)', background: 'var(--c-vellum)', borderTop: '1px solid var(--c-border)' }}>
           הוסף עצירות ביום זה כדי לחשב מסלול
         </div>
       );
     }
   }
 
-  // --- Calculate ---
   const calculate = async () => {
     if (!canCalculate) { setStatus('no-coords'); return; }
     setStatus('loading');
@@ -100,15 +179,11 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
       const { durations, distances } = await getDistanceMatrix(coords);
       const n = geocodedNodes.length;
 
-      // Identify indices: start=0 (if startNode geocoded), end=last (if endNode geocoded)
-      let startIdx = null, endIdx = null;
       const hasStart = startNode && geocodedNodes[0].role === 'start';
       const hasEnd   = endNode   && geocodedNodes[n - 1].role === 'end';
+      const startIdx = hasStart ? 0 : null;
+      const endIdx   = hasEnd   ? n - 1 : null;
 
-      if (hasStart) startIdx = 0;
-      if (hasEnd)   endIdx   = n - 1;
-
-      // Middle indices = everything except fixed start and end
       const middleIndices = geocodedNodes
         .map((_, i) => i)
         .filter((i) => i !== startIdx && i !== endIdx);
@@ -122,18 +197,8 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
       const currentDuration = routeCost(durations, currentOrder);
       const currentDistance = routeCost(distances, currentOrder);
 
-      // Optimal: TSP on middle indices, starting from startIdx or first middle
-      let optMiddleOrder;
-      if (middleIndices.length === 0) {
-        optMiddleOrder = [];
-      } else {
-        const tspStart = hasStart ? startIdx : middleIndices[0];
-        const tspIndices = hasStart ? middleIndices : middleIndices;
-        // Run nearest-neighbor through middle indices from the departure point
-        const prevNode = hasStart ? startIdx : null;
-        optMiddleOrder = optimizeMiddle(durations, middleIndices, prevNode);
-      }
-
+      // Optimized order
+      const optMiddleOrder = optimizeMiddle(durations, middleIndices, startIdx, endIdx);
       const optOrder = [
         ...(hasStart ? [startIdx] : []),
         ...optMiddleOrder,
@@ -145,7 +210,6 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
       const savedSec = currentDuration - optDuration;
       const isOptimal = savedSec < 60;
 
-      // Build legs
       const legs = optOrder.slice(0, -1).map((fi, i) => {
         const ti = optOrder[i + 1];
         return {
@@ -156,17 +220,19 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
         };
       });
 
-      // Compute optimal stop IDs for "Apply" button (middle only)
       const optimalStopIds = optMiddleOrder.map((i) => geocodedNodes[i].id);
       const ungeocodedStopIds = stopIds.filter(
-        (id) => !geocodedNodes.some((n) => n.id === id)
+        (id) => !geocodedNodes.some((nd) => nd.id === id)
       );
+
+      const isExact = middleIndices.length <= 8;
 
       setResult({
         totalDuration: optDuration,
         totalDistance: optDistance,
         savedSec,
         isOptimal,
+        isExact,
         orderedNodes: optOrder.map((i) => geocodedNodes[i]),
         legs,
         missingCoords,
@@ -179,11 +245,10 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
     }
   };
 
-  // Route visualization badge style per role
   const nodeBadge = (role) => {
-    if (role === 'start') return 'bg-green-100 text-green-700 border border-green-200';
-    if (role === 'end')   return 'bg-blue-100 text-blue-700 border border-blue-200';
-    return 'bg-gray-100 text-gray-700';
+    if (role === 'start') return { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' };
+    if (role === 'end')   return { background: 'var(--c-amber-light)', color: 'var(--c-amber)', border: '1px solid var(--c-amber-mid)' };
+    return { background: 'var(--c-vellum)', color: 'var(--c-ink)', border: '1px solid var(--c-border)' };
   };
 
   const nodeLabel = (role, name) => {
@@ -194,11 +259,11 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
   };
 
   return (
-    <div className="border-t border-indigo-100 bg-indigo-50/30 px-4 py-2.5">
+    <div className="px-4 py-2.5" style={{ borderTop: '1px solid var(--c-border)', background: 'var(--c-vellum)' }}>
 
       {/* No previous hotel warning */}
       {!startNode && (
-        <div className="flex items-center gap-1.5 text-xs text-amber-600 mb-2">
+        <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'var(--c-amber)' }}>
           <AlertCircle size={11} />
           {day.stops?.length
             ? 'לא הוגדר מלון לאמש — מוצא המסלול לא ידוע'
@@ -206,9 +271,8 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
         </div>
       )}
 
-      {/* Previous hotel exists but has no coords */}
       {startNode && startNode.lat == null && (
-        <div className="flex items-center gap-1.5 text-xs text-amber-600 mb-2">
+        <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'var(--c-amber)' }}>
           <AlertCircle size={11} />
           למלון אמש ({startNode.name}) חסר מיקום — פתח אותו במקומות והוסף כתובת לאימות
         </div>
@@ -216,25 +280,25 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
 
       {status === 'idle' && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs text-gray-500">
+          <div className="flex items-center gap-3 text-xs flex-wrap" style={{ color: 'var(--c-muted)' }}>
             {startNode && (
-              <span className="flex items-center gap-1 text-green-600">
+              <span className="flex items-center gap-1" style={{ color: '#15803d' }}>
                 <Hotel size={11} />
                 מ: {startNode.name.length > 18 ? startNode.name.slice(0, 18) + '…' : startNode.name}
               </span>
             )}
             <span className="flex items-center gap-1">
-              <MapPin size={11} className="text-indigo-400" />
+              <MapPin size={11} style={{ color: 'var(--c-amber)' }} />
               {middleNodes.length} עצירות
             </span>
             {endNode && (
-              <span className="flex items-center gap-1 text-blue-600">
+              <span className="flex items-center gap-1" style={{ color: 'var(--c-amber)' }}>
                 <Hotel size={11} />
                 אל: {endNode.name.length > 18 ? endNode.name.slice(0, 18) + '…' : endNode.name}
               </span>
             )}
             {missingCoords > 0 && (
-              <span className="text-amber-600 flex items-center gap-1">
+              <span className="flex items-center gap-1" style={{ color: 'var(--c-amber)' }}>
                 <AlertCircle size={11} />
                 {missingCoords} ללא מיקום
               </span>
@@ -243,7 +307,10 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
           <button
             onClick={calculate}
             disabled={!canCalculate}
-            className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            style={{ color: 'var(--c-amber)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--c-ink)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--c-amber)'}
           >
             <RotateCw size={11} />
             חשב מסלול מיטבי
@@ -252,8 +319,8 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
       )}
 
       {status === 'loading' && (
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <RotateCw size={12} className="animate-spin text-indigo-400" />
+        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--c-muted)' }}>
+          <RotateCw size={12} className="animate-spin" style={{ color: 'var(--c-amber)' }} />
           מחשב מרחקים...
         </div>
       )}
@@ -267,7 +334,7 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
       )}
 
       {status === 'no-coords' && (
-        <div className="text-xs text-amber-600 flex items-center gap-1.5">
+        <div className="text-xs flex items-center gap-1.5" style={{ color: 'var(--c-amber)' }}>
           <AlertCircle size={12} />
           חסרות קואורדינטות — פתח מקומות והוסף כתובות לאימות מיקום
         </div>
@@ -277,21 +344,22 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
         <div className="space-y-2">
           {/* Summary */}
           <div className="flex items-center gap-3 flex-wrap text-xs">
-            <div className="flex items-center gap-2 font-medium text-gray-700">
+            <div className="flex items-center gap-2 font-medium" style={{ color: 'var(--c-ink)' }}>
               <span className="flex items-center gap-1">
-                <Car size={12} className="text-indigo-500" />
+                <Car size={12} style={{ color: 'var(--c-amber)' }} />
                 {formatDist(result.totalDistance)}
               </span>
-              <span className="text-gray-400">·</span>
+              <span style={{ color: 'var(--c-border)' }}>·</span>
               <span>{formatTime(result.totalDuration)} נסיעה</span>
             </div>
 
             {result.isOptimal ? (
-              <span className="flex items-center gap-1 text-green-600">
-                <Check size={11} /> סדר אופטימלי
+              <span className="flex items-center gap-1" style={{ color: '#15803d' }}>
+                <Check size={11} />
+                {result.isExact ? 'מסלול מדויק ✓' : 'מסלול מיטבי ✓'}
               </span>
             ) : (
-              <span className="text-amber-600">
+              <span style={{ color: 'var(--c-amber)' }}>
                 ניתן לחסוך {formatTime(result.savedSec)} בסדר מיטבי
               </span>
             )}
@@ -308,7 +376,8 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
                   setStatus('idle');
                   setResult(null);
                 }}
-                className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-2.5 py-1 rounded-full hover:bg-indigo-700 transition-colors font-medium"
+                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium transition-opacity hover:opacity-80"
+                style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
               >
                 <Sparkles size={10} />
                 החל סדר מיטבי
@@ -316,14 +385,17 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
             )}
 
             {result.missingCoords > 0 && (
-              <span className="text-amber-500">
+              <span style={{ color: 'var(--c-muted)' }}>
                 ({result.missingCoords} לא נכללו — חסר מיקום)
               </span>
             )}
 
             <button
               onClick={() => setStatus('idle')}
-              className="ms-auto text-gray-300 hover:text-gray-500"
+              className="ms-auto transition-colors"
+              style={{ color: 'var(--c-border)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--c-muted)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--c-border)'}
             >✕</button>
           </div>
 
@@ -331,13 +403,16 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
           <div className="flex flex-wrap items-center gap-1 text-xs" dir="ltr">
             {result.orderedNodes.map((node, i) => (
               <span key={`${node.id}-${i}`} className="flex items-center gap-1">
-                <span className={`px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${nodeBadge(node.role)}`}>
+                <span
+                  className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                  style={nodeBadge(node.role)}
+                >
                   {nodeLabel(node.role, node.name)}
                 </span>
                 {i < result.orderedNodes.length - 1 && (
-                  <span className="flex items-center gap-0.5 text-gray-400">
+                  <span className="flex items-center gap-0.5" style={{ color: 'var(--c-muted)' }}>
                     <ArrowRight size={10} />
-                    <span className="text-gray-500">{formatTime(result.legs[i].duration)}</span>
+                    <span>{formatTime(result.legs[i].duration)}</span>
                   </span>
                 )}
               </span>
@@ -347,35 +422,4 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
       )}
     </div>
   );
-}
-
-// Nearest-neighbor through middleIndices, departing from prevIdx (may be null)
-function optimizeMiddle(matrix, middleIndices, prevIdx) {
-  if (middleIndices.length === 0) return [];
-  if (middleIndices.length === 1) return middleIndices;
-
-  const remaining = new Set(middleIndices);
-  const order = [];
-  let current = prevIdx;
-
-  // If we have a departure point, find nearest unvisited
-  // Otherwise just start from the first middle index
-  if (current === null) {
-    current = middleIndices[0];
-    remaining.delete(current);
-    order.push(current);
-  }
-
-  while (remaining.size > 0) {
-    let best = -1, bestCost = Infinity;
-    for (const j of remaining) {
-      if (matrix[current][j] < bestCost) { best = j; bestCost = matrix[current][j]; }
-    }
-    if (best === -1) break;
-    order.push(best);
-    remaining.delete(best);
-    current = best;
-  }
-
-  return order;
 }
