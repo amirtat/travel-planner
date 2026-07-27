@@ -1,14 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import {
   collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
+  updateDoc,
   deleteDoc,
   serverTimestamp,
   onSnapshot,
+  query,
+  where,
+  arrayUnion,
 } from 'firebase/firestore';
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as fbSignOut,
+} from 'firebase/auth';
 
 const ACTIVE_TRIP_KEY = 'travel-planner-active-trip';
 const LEGACY_KEY = 'travel-planner-v1';
@@ -37,6 +48,11 @@ function migrateData(data) {
 }
 
 export function useTravelStore() {
+  // Auth state
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Trip state
   const [trips, setTrips] = useState([]);
   const [activeTripId, setActiveTripId] = useState(
     () => localStorage.getItem(ACTIVE_TRIP_KEY) || null
@@ -46,21 +62,58 @@ export function useTravelStore() {
   const [tripsLoading, setTripsLoading] = useState(true);
   const saveTimeoutRef = useRef(null);
 
-  // Real-time trips list
+  // Auth state listener
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'trips'), (snap) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  // Real-time trips list — filtered by membership, only when authenticated
+  useEffect(() => {
+    if (!user) {
+      setTrips([]);
+      setTripsLoading(false);
+      return;
+    }
+
+    // One-time migration: add members field to old trips that don't have it
+    const migrationKey = `auth-migrated-${user.uid}`;
+    if (!localStorage.getItem(migrationKey)) {
+      getDocs(collection(db, 'trips')).then((snap) => {
+        const toMigrate = snap.docs.filter((d) => !d.data().members);
+        return Promise.all(
+          toMigrate.map((d) =>
+            updateDoc(doc(db, 'trips', d.id), {
+              members: [user.uid],
+              ownerId: user.uid,
+            })
+          )
+        );
+      }).then(() => {
+        localStorage.setItem(migrationKey, '1');
+      }).catch(console.error);
+    }
+
+    setTripsLoading(true);
+    const q = query(collection(db, 'trips'), where('members', 'array-contains', user.uid));
+    const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((d) => ({
         id: d.id,
         name: d.data().name ?? d.data().tripName ?? 'ללא שם',
         language: d.data().language ?? 'he',
         createdAt: d.data().createdAt,
+        shareToken: d.data().shareToken ?? null,
+        members: d.data().members ?? [],
       }));
       list.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
       setTrips(list);
       setTripsLoading(false);
     });
     return unsub;
-  }, []);
+  }, [user?.uid]);
 
   // Load active trip once on selection
   useEffect(() => {
@@ -99,6 +152,10 @@ export function useTravelStore() {
     saveToFirestore(activeTripId, newData);
   }, [activeTripId, saveToFirestore]);
 
+  // --- Auth ---
+  const signIn = () => signInWithPopup(auth, new GoogleAuthProvider());
+  const signOut = () => fbSignOut(auth);
+
   // --- Trip management ---
   const createTrip = async (name, language = 'he', initialData = null) => {
     const id = generateId();
@@ -108,6 +165,8 @@ export function useTravelStore() {
       ...(initialData ? migrateData(initialData) : {}),
       name,
       language,
+      ownerId: user?.uid ?? null,
+      members: user?.uid ? [user.uid] : [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -148,9 +207,30 @@ export function useTravelStore() {
     if (activeTripId === id) clearActiveTrip();
   };
 
+  // --- Share / Join ---
+  const generateShareToken = async (tripId) => {
+    const token = generateId();
+    await updateDoc(doc(db, 'trips', tripId), { shareToken: token });
+    return token;
+  };
+
+  const joinTripByToken = async (token) => {
+    if (!user) throw new Error('Not authenticated');
+    const q = query(collection(db, 'trips'), where('shareToken', '==', token));
+    const snap = await getDocs(q);
+    if (snap.empty) throw new Error('Trip not found');
+    const tripDoc = snap.docs[0];
+    const members = tripDoc.data().members ?? [];
+    if (!members.includes(user.uid)) {
+      await updateDoc(doc(db, 'trips', tripDoc.id), {
+        members: arrayUnion(user.uid),
+      });
+    }
+    return tripDoc.id;
+  };
+
   // --- Current trip CRUD ---
   const update = (partial) => {
-    // Normalize tripName → name for backward compat
     const normalized = { ...partial };
     if ('tripName' in normalized) {
       normalized.name = normalized.tripName;
@@ -234,6 +314,12 @@ export function useTravelStore() {
   const clearLegacyData = () => localStorage.removeItem(LEGACY_KEY);
 
   return {
+    // Auth
+    user,
+    authLoading,
+    signIn,
+    signOut,
+
     // Trip list
     trips,
     activeTripId,
@@ -247,6 +333,10 @@ export function useTravelStore() {
     deleteTrip,
     getLegacyData,
     clearLegacyData,
+
+    // Share / Join
+    generateShareToken,
+    joinTripByToken,
 
     // Current trip data (spread for backward compat)
     ...(tripData ?? { name: '', language: 'he', days: [], places: [] }),

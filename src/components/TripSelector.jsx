@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Plus, Trash2, ArrowLeft, Download, MapPin } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Download, MapPin, Share2, Check, LogOut } from 'lucide-react';
 
-export default function TripSelector({ store }) {
+export default function TripSelector({ store, joinError }) {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   const legacyData = store.getLegacyData();
 
@@ -25,6 +26,16 @@ export default function TripSelector({ store }) {
     e.stopPropagation();
     if (!confirm(`למחוק את "${name}"?`)) return;
     await store.deleteTrip(id);
+  };
+
+  const handleShare = async (e, tripId) => {
+    e.stopPropagation();
+    const token = await store.generateShareToken(tripId);
+    const base = window.location.origin + window.location.pathname;
+    const url = `${base}?join=${token}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedId(tripId);
+    setTimeout(() => setCopiedId(null), 2500);
   };
 
   return (
@@ -57,6 +68,49 @@ export default function TripSelector({ store }) {
           className="rounded-2xl p-6 shadow-sm"
           style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
         >
+          {/* User info */}
+          <div className="flex items-center justify-between mb-5 pb-4" style={{ borderBottom: '1px solid var(--c-border)' }}>
+            <div className="flex items-center gap-2.5">
+              {store.user?.photoURL ? (
+                <img
+                  src={store.user.photoURL}
+                  alt=""
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold"
+                  style={{ background: 'var(--c-amber-light)', color: 'var(--c-amber)' }}
+                >
+                  {store.user?.displayName?.[0] ?? '?'}
+                </div>
+              )}
+              <span className="text-sm font-medium truncate max-w-[150px]" style={{ color: 'var(--c-ink)' }}>
+                {store.user?.displayName ?? store.user?.email}
+              </span>
+            </div>
+            <button
+              onClick={store.signOut}
+              title="התנתק"
+              className="p-1.5 rounded-lg transition-colors"
+              style={{ color: 'var(--c-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.background = '#fef2f2'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-muted)'; e.currentTarget.style.background = ''; }}
+            >
+              <LogOut size={15} />
+            </button>
+          </div>
+
+          {/* Join error */}
+          {joinError && (
+            <div
+              className="mb-4 px-3 py-2 rounded-xl text-xs"
+              style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' }}
+            >
+              {joinError}
+            </div>
+          )}
+
           {/* Existing trips */}
           {store.trips.length > 0 && (
             <div className="space-y-2 mb-6">
@@ -79,6 +133,18 @@ export default function TripSelector({ store }) {
                     {trip.name}
                   </span>
                   <div className="flex items-center gap-1">
+                    {/* Share */}
+                    <span
+                      onClick={(e) => handleShare(e, trip.id)}
+                      className="p-1 rounded opacity-0 group-hover:opacity-100 transition-all"
+                      style={{ color: copiedId === trip.id ? 'var(--c-amber)' : 'var(--c-muted)' }}
+                      title="העתק קישור שיתוף"
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--c-amber)'}
+                      onMouseLeave={e => e.currentTarget.style.color = copiedId === trip.id ? 'var(--c-amber)' : 'var(--c-muted)'}
+                    >
+                      {copiedId === trip.id ? <Check size={13} /> : <Share2 size={13} />}
+                    </span>
+                    {/* Delete */}
                     <span
                       onClick={(e) => handleDelete(e, trip.id, trip.name)}
                       className="p-1 rounded opacity-0 group-hover:opacity-100 transition-all"
@@ -93,6 +159,13 @@ export default function TripSelector({ store }) {
                 </button>
               ))}
             </div>
+          )}
+
+          {/* Copy feedback */}
+          {copiedId && (
+            <p className="text-xs text-center mb-3" style={{ color: 'var(--c-amber)' }}>
+              קישור הצטרפות הועתק ✓ שלח לבן/בת הזוג
+            </p>
           )}
 
           {/* Import legacy */}
@@ -130,7 +203,7 @@ export default function TripSelector({ store }) {
           {/* Create new */}
           {store.trips.length === 0 && (
             <p className="text-xs mb-3" style={{ color: 'var(--c-muted)' }}>
-              {store.trips.length === 0 ? 'צור את הטיול הראשון שלך' : ''}
+              צור את הטיול הראשון שלך
             </p>
           )}
           <div className="flex gap-2">

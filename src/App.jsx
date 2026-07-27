@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTravelStore } from './store';
 import { useT } from './i18n';
 import Header from './components/Header';
@@ -7,29 +7,62 @@ import PlacesView from './components/PlacesView';
 import SettingsModal from './components/SettingsModal';
 import BuiltinCalculator from './components/BuiltinCalculator';
 import TripSelector from './components/TripSelector';
+import LoginScreen from './components/LoginScreen';
 
 export default function App() {
   const store = useTravelStore();
   const t = useT(store.language);
   const [tab, setTab] = useState('itinerary');
   const [showSettings, setShowSettings] = useState(false);
+  const [joinError, setJoinError] = useState(null);
 
   const isRTL = store.language === 'he';
 
-  if (store.loading) {
+  // Handle ?join=TOKEN in URL — runs after user is authenticated
+  useEffect(() => {
+    if (!store.user) return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('join');
+    if (!token) return;
+
+    // Remove the query param immediately so it doesn't trigger again
+    window.history.replaceState({}, '', window.location.pathname);
+
+    store.joinTripByToken(token)
+      .then((tripId) => store.switchTrip(tripId))
+      .catch(() => setJoinError('הקישור לא תקין או שהטיול לא נמצא'));
+  }, [store.user?.uid]);
+
+  // Auth loading
+  if (store.authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400 text-sm animate-pulse">טוען...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--c-vellum)' }}>
+        <div className="text-sm animate-pulse" style={{ color: 'var(--c-muted)' }}>טוען...</div>
       </div>
     );
   }
 
+  // Not signed in
+  if (!store.user) {
+    return <LoginScreen store={store} />;
+  }
+
+  // Trips loading
+  if (store.loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--c-vellum)' }}>
+        <div className="text-sm animate-pulse" style={{ color: 'var(--c-muted)' }}>טוען...</div>
+      </div>
+    );
+  }
+
+  // No active trip — show selector
   if (!store.activeTripId) {
-    return <TripSelector store={store} />;
+    return <TripSelector store={store} joinError={joinError} />;
   }
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} lang={store.language} className="min-h-screen bg-gray-50 flex flex-col">
+    <div dir={isRTL ? 'rtl' : 'ltr'} lang={store.language} className="min-h-screen flex flex-col" style={{ background: 'var(--c-vellum)' }}>
       <Header
         store={store}
         t={t}
