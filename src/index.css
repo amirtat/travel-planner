@@ -2,11 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  box-sizing: border-box;
+:root {
+  --c-vellum:       #F0EDE6;
+  --c-surface:      #FDFCF9;
+  --c-ink:          #1B2A3B;
+  --c-amber:        #9C6A22;
+  --c-amber-light:  rgba(156, 106, 34, 0.10);
+  --c-amber-mid:    rgba(156, 106, 34, 0.22);
+  --c-border:       #E4DFD8;
+  --c-muted:        #8A8480;
+  --c-sage:         #4F7A5A;
+  --font-display:   'DM Serif Display', Georgia, serif;
+  --font-body:      'Heebo', system-ui, -apple-system, sans-serif;
+  --font-mono:      'JetBrains Mono', 'Courier New', monospace;
 }
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--c-vellum);
+  color: var(--c-ink);
+  font-family: var(--font-body);
 }
+
+/* Subtle map-grid pattern for landing screens */
+.map-grid-bg {
+  background-color: var(--c-vellum);
+  background-image:
+    linear-gradient(var(--c-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--c-border) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Amber pulse for urgent cancellation */
+@keyframes amber-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+.animate-amber-pulse { animation: amber-pulse 1.5s ease-in-out infinite; }

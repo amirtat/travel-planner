@@ -1,66 +1,87 @@
-import { Map, MapPin, Calculator, Settings, Globe } from 'lucide-react';
+import { Map, MapPin, Calculator, Globe, Settings } from 'lucide-react';
 
 const TABS = [
-  { key: 'itinerary', icon: Map },
-  { key: 'places', icon: MapPin },
+  { key: 'itinerary',  icon: Map },
+  { key: 'places',     icon: MapPin },
   { key: 'calculator', icon: Calculator },
 ];
 
 export default function Header({ store, t, tab, onTabChange, onSettings }) {
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <header style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}
+      className="sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Map size={16} className="text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-gray-800 text-sm leading-none">{t.appTitle}</h1>
-              {store.tripName && (
-                <p className="text-xs text-gray-400 mt-0.5">{store.tripName}</p>
-              )}
-            </div>
+
+          {/* Trip name */}
+          <div>
+            <p className="text-[11px] uppercase tracking-widest mb-0.5" style={{ color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>
+              {t.appTitle}
+            </p>
+            <h1
+              className="text-lg leading-none"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--c-ink)' }}
+            >
+              {store.tripName || '—'}
+            </h1>
           </div>
 
+          {/* Controls */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => store.update({ language: store.language === 'he' ? 'en' : 'he' })}
-              className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 font-medium transition-colors"
+              className="text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors"
+              style={{
+                background: 'var(--c-vellum)',
+                color: 'var(--c-muted)',
+                border: '1px solid var(--c-border)',
+                fontFamily: 'var(--font-mono)',
+              }}
             >
               {store.language === 'he' ? 'EN' : 'עב'}
             </button>
             <button
               onClick={store.clearActiveTrip}
               title="החלף טיול"
-              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--c-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-amber)'; e.currentTarget.style.background = 'var(--c-amber-light)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-muted)'; e.currentTarget.style.background = ''; }}
             >
-              <Globe size={17} />
+              <Globe size={16} />
             </button>
             <button
               onClick={onSettings}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--c-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-ink)'; e.currentTarget.style.background = 'var(--c-vellum)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-muted)'; e.currentTarget.style.background = ''; }}
             >
-              <Settings size={17} />
+              <Settings size={16} />
             </button>
           </div>
         </div>
 
-        <div className="flex gap-0.5">
-          {TABS.map(({ key, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => onTabChange(key)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                tab === key
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Icon size={14} />
-              {t.tabs[key]}
-            </button>
-          ))}
+        {/* Tabs */}
+        <div className="flex gap-0">
+          {TABS.map(({ key, icon: Icon }) => {
+            const active = tab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => onTabChange(key)}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap"
+                style={{
+                  borderColor: active ? 'var(--c-amber)' : 'transparent',
+                  color: active ? 'var(--c-amber)' : 'var(--c-muted)',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                <Icon size={14} />
+                {t.tabs[key]}
+              </button>
+            );
+          })}
         </div>
       </div>
     </header>
