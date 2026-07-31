@@ -256,6 +256,21 @@ export function useTravelStore() {
     updateTripData({ ...tripData, days: tripData.days.filter((d) => d.id !== id) });
   };
 
+  const CONTENT_FIELDS = ['items', 'accommodationId', 'accommodationName', 'region', 'notes', 'freeCancellation'];
+  const swapDayContent = (id1, id2) => {
+    const d1 = tripData.days.find((d) => d.id === id1);
+    const d2 = tripData.days.find((d) => d.id === id2);
+    if (!d1 || !d2) return;
+    const pick = (src) => Object.fromEntries(CONTENT_FIELDS.map((k) => [k, src[k]]));
+    const newDays = tripData.days.map((d) => {
+      if (d.id === id1) return { ...d, ...pick(d2) };
+      if (d.id === id2) return { ...d, ...pick(d1) };
+      return d;
+    });
+    // no sortDays — dates didn't change
+    updateTripData({ ...tripData, days: newDays });
+  };
+
   const addPlace = (place) => {
     const newPlace = { id: generateId(), ...place };
     updateTripData({ ...tripData, places: [...tripData.places, newPlace] });
@@ -348,6 +363,7 @@ export function useTravelStore() {
     addDay,
     updateDay,
     deleteDay,
+    swapDayContent,
     addPlace,
     updatePlace,
     deletePlace,
