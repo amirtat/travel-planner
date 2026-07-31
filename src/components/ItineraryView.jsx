@@ -95,7 +95,7 @@ function ActionBtn({ onClick, title, active, danger, children }) {
   );
 }
 
-function DayCard({ day, store, t, today, isOver, isDragOverlay, onEdit, onDelete, onViewPlace, onToggleInsights, insightsOpen, prevPlace, gapDays }) {
+function DayCard({ day, store, t, today, isOver, isDragOverlay, dragHandleProps, onEdit, onDelete, onViewPlace, onToggleInsights, insightsOpen, prevPlace, gapDays }) {
   const isPast = day.date && day.date < today;
   const isToday = day.date === today;
   const place = day.accommodationId ? store.places.find((p) => p.id === day.accommodationId) : null;
@@ -227,6 +227,17 @@ function DayCard({ day, store, t, today, isOver, isDragOverlay, onEdit, onDelete
                     <ActionBtn onClick={() => onDelete(day.id)} title={t.edit.delete} danger>
                       <Trash2 size={13} />
                     </ActionBtn>
+                    {/* Drag handle */}
+                    <button
+                      {...dragHandleProps}
+                      className="p-1.5 rounded-lg cursor-grab active:cursor-grabbing touch-none transition-colors"
+                      style={{ color: 'var(--c-border)' }}
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--c-muted)'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--c-border)'}
+                      title="גרור להחלפת ימים"
+                    >
+                      <GripVertical size={13} />
+                    </button>
                   </>
                 )}
               </div>
@@ -307,28 +318,15 @@ function SortableDayRow({ day, activeId, ...props }) {
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, position: 'relative' }}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
     >
-      {/* Drag handle — floats over the date column area */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute z-10 flex items-center justify-center rounded-md cursor-grab active:cursor-grabbing touch-none"
-        style={{
-          insetInlineStart: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 20,
-          height: 28,
-          color: isDragging ? 'var(--c-amber)' : 'var(--c-border)',
-        }}
-        title="גרור להחלפת תוכן"
-      >
-        <GripVertical size={14} />
-      </div>
-
       <div style={{ opacity: isDragging ? 0.3 : 1, transition: 'opacity 150ms' }}>
-        <DayCard day={day} isOver={isOver && activeId && activeId !== day.id} {...props} />
+        <DayCard
+          day={day}
+          isOver={isOver && activeId && activeId !== day.id}
+          dragHandleProps={{ ...attributes, ...listeners }}
+          {...props}
+        />
       </div>
     </div>
   );
