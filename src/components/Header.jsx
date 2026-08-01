@@ -1,4 +1,4 @@
-import { Map, MapPin, Calculator, Globe, Settings } from 'lucide-react';
+import { Map, MapPin, Calculator, Globe, Settings, HelpCircle, Eye } from 'lucide-react';
 
 const TABS = [
   { key: 'itinerary',  icon: Map },
@@ -6,7 +6,7 @@ const TABS = [
   { key: 'calculator', icon: Calculator },
 ];
 
-export default function Header({ store, t, tab, onTabChange, onSettings }) {
+export default function Header({ store, t, tab, onTabChange, onSettings, onFaq, isReadOnly }) {
   return (
     <header style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}
       className="sticky top-0 z-40">
@@ -14,16 +14,24 @@ export default function Header({ store, t, tab, onTabChange, onSettings }) {
         <div className="flex items-center justify-between h-14">
 
           {/* Trip name */}
-          <div>
-            <p className="text-[11px] uppercase tracking-widest mb-0.5" style={{ color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>
-              {t.appTitle}
-            </p>
-            <h1
-              className="text-lg leading-none"
-              style={{ fontFamily: 'var(--font-display)', color: 'var(--c-ink)' }}
-            >
-              {store.tripName || '—'}
-            </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-widest mb-0.5" style={{ color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>
+                {t.appTitle}
+              </p>
+              <h1 className="text-lg leading-none truncate" style={{ fontFamily: 'var(--font-display)', color: 'var(--c-ink)' }}>
+                {store.tripName || '—'}
+              </h1>
+            </div>
+            {isReadOnly && (
+              <span
+                className="shrink-0 flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }}
+              >
+                <Eye size={9} />
+                {store.language === 'he' ? 'אורח' : 'Guest'}
+              </span>
+            )}
           </div>
 
           {/* Controls */}
@@ -41,6 +49,16 @@ export default function Header({ store, t, tab, onTabChange, onSettings }) {
               {store.language === 'he' ? 'EN' : 'עב'}
             </button>
             <button
+              onClick={onFaq}
+              title={store.language === 'he' ? 'שאלות נפוצות' : 'FAQ'}
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--c-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-ink)'; e.currentTarget.style.background = 'var(--c-vellum)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-muted)'; e.currentTarget.style.background = ''; }}
+            >
+              <HelpCircle size={16} />
+            </button>
+            <button
               onClick={store.clearActiveTrip}
               title="החלף טיול"
               className="p-2 rounded-lg transition-colors"
@@ -50,15 +68,17 @@ export default function Header({ store, t, tab, onTabChange, onSettings }) {
             >
               <Globe size={16} />
             </button>
-            <button
-              onClick={onSettings}
-              className="p-2 rounded-lg transition-colors"
-              style={{ color: 'var(--c-muted)' }}
-              onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-ink)'; e.currentTarget.style.background = 'var(--c-vellum)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-muted)'; e.currentTarget.style.background = ''; }}
-            >
-              <Settings size={16} />
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={onSettings}
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: 'var(--c-muted)' }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--c-ink)'; e.currentTarget.style.background = 'var(--c-vellum)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--c-muted)'; e.currentTarget.style.background = ''; }}
+              >
+                <Settings size={16} />
+              </button>
+            )}
           </div>
         </div>
 

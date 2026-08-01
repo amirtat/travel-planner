@@ -95,7 +95,7 @@ function ActionBtn({ onClick, title, active, danger, children }) {
   );
 }
 
-function DayCard({ day, store, t, today, isOver, isDragOverlay, dragHandleProps, onEdit, onDelete, onViewPlace, onToggleInsights, insightsOpen, prevPlace, gapDays }) {
+function DayCard({ day, store, t, today, isOver, isDragOverlay, dragHandleProps, isReadOnly, onEdit, onDelete, onViewPlace, onToggleInsights, insightsOpen, prevPlace, gapDays }) {
   const isPast = day.date && day.date < today;
   const isToday = day.date === today;
   const place = day.accommodationId ? store.places.find((p) => p.id === day.accommodationId) : null;
@@ -221,23 +221,26 @@ function DayCard({ day, store, t, today, isOver, isDragOverlay, dragHandleProps,
                     <ActionBtn onClick={() => onToggleInsights(day.id)} title="ניתוח מסלול" active={insightsOpen}>
                       <Route size={13} />
                     </ActionBtn>
-                    <ActionBtn onClick={() => onEdit(day)} title={t.edit.edit}>
-                      <Pencil size={13} />
-                    </ActionBtn>
-                    <ActionBtn onClick={() => onDelete(day.id)} title={t.edit.delete} danger>
-                      <Trash2 size={13} />
-                    </ActionBtn>
-                    {/* Drag handle */}
-                    <button
-                      {...dragHandleProps}
-                      className="p-1.5 rounded-lg cursor-grab active:cursor-grabbing touch-none transition-colors"
-                      style={{ color: 'var(--c-border)' }}
-                      onMouseEnter={e => e.currentTarget.style.color = 'var(--c-muted)'}
-                      onMouseLeave={e => e.currentTarget.style.color = 'var(--c-border)'}
-                      title="גרור להחלפת ימים"
-                    >
-                      <GripVertical size={13} />
-                    </button>
+                    {!isReadOnly && (
+                      <>
+                        <ActionBtn onClick={() => onEdit(day)} title={t.edit.edit}>
+                          <Pencil size={13} />
+                        </ActionBtn>
+                        <ActionBtn onClick={() => onDelete(day.id)} title={t.edit.delete} danger>
+                          <Trash2 size={13} />
+                        </ActionBtn>
+                        <button
+                          {...dragHandleProps}
+                          className="p-1.5 rounded-lg cursor-grab active:cursor-grabbing touch-none transition-colors"
+                          style={{ color: 'var(--c-border)' }}
+                          onMouseEnter={e => e.currentTarget.style.color = 'var(--c-muted)'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'var(--c-border)'}
+                          title="גרור להחלפת ימים"
+                        >
+                          <GripVertical size={13} />
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -304,7 +307,7 @@ function DayCard({ day, store, t, today, isOver, isDragOverlay, dragHandleProps,
   );
 }
 
-function SortableDayRow({ day, activeId, ...props }) {
+function SortableDayRow({ day, activeId, isReadOnly, ...props }) {
   const {
     attributes,
     listeners,
@@ -324,7 +327,8 @@ function SortableDayRow({ day, activeId, ...props }) {
         <DayCard
           day={day}
           isOver={isOver && activeId && activeId !== day.id}
-          dragHandleProps={{ ...attributes, ...listeners }}
+          dragHandleProps={isReadOnly ? {} : { ...attributes, ...listeners }}
+          isReadOnly={isReadOnly}
           {...props}
         />
       </div>
@@ -332,7 +336,7 @@ function SortableDayRow({ day, activeId, ...props }) {
   );
 }
 
-export default function ItineraryView({ store, t }) {
+export default function ItineraryView({ store, t, isReadOnly }) {
   const [editDay, setEditDay] = useState(null);
   const [viewPlace, setViewPlace] = useState(null);
   const [expandedInsights, setExpandedInsights] = useState(new Set());
@@ -368,14 +372,16 @@ export default function ItineraryView({ store, t }) {
         <h2 className="text-2xl" style={{ fontFamily: 'var(--font-display)', color: 'var(--c-ink)' }}>
           {t.itinerary.title}
         </h2>
-        <button
-          onClick={() => setEditDay('new')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
-          style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
-        >
-          <Plus size={14} />
-          {t.itinerary.addDay}
-        </button>
+        {!isReadOnly && (
+          <button
+            onClick={() => setEditDay('new')}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
+          >
+            <Plus size={14} />
+            {t.itinerary.addDay}
+          </button>
+        )}
       </div>
 
       {store.days.length === 0 ? (
@@ -423,6 +429,7 @@ export default function ItineraryView({ store, t }) {
                       insightsOpen={expandedInsights.has(day.id)}
                       prevPlace={prevPlace}
                       gapDays={gapDays}
+                      isReadOnly={isReadOnly}
                       onEdit={setEditDay}
                       onDelete={handleDelete}
                       onViewPlace={setViewPlace}

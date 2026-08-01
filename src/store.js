@@ -20,6 +20,7 @@ import {
   GoogleAuthProvider,
   signOut as fbSignOut,
 } from 'firebase/auth';
+import { canEdit } from './permissions';
 
 const ACTIVE_TRIP_KEY = 'travel-planner-active-trip';
 const LEGACY_KEY = 'travel-planner-v1';
@@ -47,6 +48,29 @@ function migrateData(data) {
   return { ...data, days: data.days.map(migrateDay) };
 }
 
+function tripFromDoc(d) {
+  const data = d.data();
+  return {
+    id: d.id,
+    name: data.name ?? data.tripName ?? 'ללא שם',
+    language: data.language ?? 'he',
+    createdAt: data.createdAt,
+    shareToken: data.shareToken ?? null,
+    guestToken: data.guestToken ?? null,
+    members: data.members ?? [],
+    guests: data.guests ?? [],
+    ownerId: data.ownerId ?? null,
+  };
+}
+
+function mergeTrips(memberList, guestList) {
+  const map = new Map();
+  [...memberList, ...guestList].forEach((t) => map.set(t.id, t));
+  return [...map.values()].sort(
+    (a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0)
+  );
+}
+
 export function useTravelStore() {
   // Auth state
   const [user, setUser] = useState(null);
@@ -62,6 +86,10 @@ export function useTravelStore() {
   const [tripsLoading, setTripsLoading] = useState(true);
   const saveTimeoutRef = useRef(null);
 
+  // Track both queries for merging
+  const memberTripsRef = useRef([]);
+  const guestTripsRef  = useRef([]);
+
   // Auth state listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -71,7 +99,7 @@ export function useTravelStore() {
     return unsub;
   }, []);
 
-  // Real-time trips list — filtered by membership, only when authenticated
+  // Real-time trips list — two queries: member + guest
   useEffect(() => {
     if (!user) {
       setTrips([]);
@@ -98,21 +126,24 @@ export function useTravelStore() {
     }
 
     setTripsLoading(true);
-    const q = query(collection(db, 'trips'), where('members', 'array-contains', user.uid));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({
-        id: d.id,
-        name: d.data().name ?? d.data().tripName ?? 'ללא שם',
-        language: d.data().language ?? 'he',
-        createdAt: d.data().createdAt,
-        shareToken: d.data().shareToken ?? null,
-        members: d.data().members ?? [],
-      }));
-      list.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
-      setTrips(list);
-      setTripsLoading(false);
+    let loaded = 0;
+    const onBothLoaded = () => { if (++loaded >= 2) setTripsLoading(false); };
+
+    const q1 = query(collection(db, 'trips'), where('members', 'array-contains', user.uid));
+    const unsub1 = onSnapshot(q1, (snap) => {
+      memberTripsRef.current = snap.docs.map(tripFromDoc);
+      setTrips(mergeTrips(memberTripsRef.current, guestTripsRef.current));
+      onBothLoaded();
     });
-    return unsub;
+
+    const q2 = query(collection(db, 'trips'), where('guests', 'array-contains', user.uid));
+    const unsub2 = onSnapshot(q2, (snap) => {
+      guestTripsRef.current = snap.docs.map(tripFromDoc);
+      setTrips(mergeTrips(memberTripsRef.current, guestTripsRef.current));
+      onBothLoaded();
+    });
+
+    return () => { unsub1(); unsub2(); };
   }, [user?.uid]);
 
   // Load active trip once on selection
@@ -167,6 +198,7 @@ export function useTravelStore() {
       language,
       ownerId: user?.uid ?? null,
       members: user?.uid ? [user.uid] : [],
+      guests: [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -207,7 +239,7 @@ export function useTravelStore() {
     if (activeTripId === id) clearActiveTrip();
   };
 
-  // --- Share / Join ---
+  // --- Share / Join (admin) ---
   const generateShareToken = async (tripId) => {
     const token = generateId();
     await updateDoc(doc(db, 'trips', tripId), { shareToken: token });
@@ -220,14 +252,36 @@ export function useTravelStore() {
     const snap = await getDocs(q);
     if (snap.empty) throw new Error('Trip not found');
     const tripDoc = snap.docs[0];
-    const members = tripDoc.data().members ?? [];
-    if (!members.includes(user.uid)) {
-      await updateDoc(doc(db, 'trips', tripDoc.id), {
-        members: arrayUnion(user.uid),
-      });
+    if (!(tripDoc.data().members ?? []).includes(user.uid)) {
+      await updateDoc(doc(db, 'trips', tripDoc.id), { members: arrayUnion(user.uid) });
     }
     return tripDoc.id;
   };
+
+  // --- Share / Join (guest) ---
+  const generateGuestToken = async (tripId) => {
+    const token = generateId();
+    await updateDoc(doc(db, 'trips', tripId), { guestToken: token });
+    return token;
+  };
+
+  const joinTripAsGuest = async (token) => {
+    if (!user) throw new Error('Not authenticated');
+    const q = query(collection(db, 'trips'), where('guestToken', '==', token));
+    const snap = await getDocs(q);
+    if (snap.empty) throw new Error('Trip not found');
+    const tripDoc = snap.docs[0];
+    const data = tripDoc.data();
+    // Upgrade to member if already a member
+    if ((data.members ?? []).includes(user.uid)) return tripDoc.id;
+    if (!(data.guests ?? []).includes(user.uid)) {
+      await updateDoc(doc(db, 'trips', tripDoc.id), { guests: arrayUnion(user.uid) });
+    }
+    return tripDoc.id;
+  };
+
+  // --- Permission helpers ---
+  const isReadOnly = tripData && user ? !canEdit(tripData, user.uid) : false;
 
   // --- Current trip CRUD ---
   const update = (partial) => {
@@ -267,7 +321,6 @@ export function useTravelStore() {
       if (d.id === id2) return { ...d, ...pick(d1) };
       return d;
     });
-    // no sortDays — dates didn't change
     updateTripData({ ...tripData, days: newDays });
   };
 
@@ -341,6 +394,9 @@ export function useTravelStore() {
     loading: loading || tripsLoading,
     tripLoading: loading,
 
+    // Permissions
+    isReadOnly,
+
     // Trip management
     createTrip,
     switchTrip,
@@ -352,6 +408,8 @@ export function useTravelStore() {
     // Share / Join
     generateShareToken,
     joinTripByToken,
+    generateGuestToken,
+    joinTripAsGuest,
 
     // Current trip data (spread for backward compat)
     ...(tripData ?? { name: '', language: 'he', days: [], places: [] }),

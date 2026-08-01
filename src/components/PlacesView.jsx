@@ -10,7 +10,7 @@ const STATUS_STYLES = {
   visited:     { background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' },
 };
 
-export default function PlacesView({ store, t }) {
+export default function PlacesView({ store, t, isReadOnly }) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterRegion, setFilterRegion] = useState('all');
@@ -138,14 +138,16 @@ export default function PlacesView({ store, t }) {
               );
             })}
           </div>
-          <button
-            onClick={() => setEditPlace('new')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
-          >
-            <Plus size={15} />
-            {t.places.addPlace}
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => setEditPlace('new')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
+            >
+              <Plus size={15} />
+              {t.places.addPlace}
+            </button>
+          )}
         </div>
 
         {/* Type filter */}
@@ -345,11 +347,11 @@ export default function PlacesView({ store, t }) {
           store={store}
           t={t}
           onClose={() => setViewPlace(null)}
-          onEdit={() => handleEdit(viewPlace)}
+          onEdit={isReadOnly ? null : () => handleEdit(viewPlace)}
         />
       )}
 
-      {editPlace !== null && (
+      {!isReadOnly && editPlace !== null && (
         <PlaceEditModal
           place={editPlace === 'new' ? null : editPlace}
           store={store}
