@@ -168,6 +168,7 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
                 <option value="considering">{t.places.considering}</option>
                 <option value="booked">{t.places.booked}</option>
                 <option value="visited">{t.places.visited}</option>
+                <option value="abandoned">{t.places.abandoned}</option>
               </select>
             </div>
           </div>

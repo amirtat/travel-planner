@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, ExternalLink, Route, AlertTriangle, Hotel, GripVertical, Car, Bus, Train, TramFront, Plane, Ship, Footprints } from 'lucide-react';
 
 const TRANSPORT_CONFIG = {
@@ -353,6 +353,7 @@ function SortableDayRow({ day, activeId, isReadOnly, ...props }) {
   return (
     <div
       ref={setNodeRef}
+      id={`day-card-${day.id}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
       <div style={{ opacity: isDragging ? 0.3 : 1, transition: 'opacity 150ms' }}>
@@ -387,6 +388,14 @@ export default function ItineraryView({ store, t, isReadOnly }) {
 
   const today = new Date().toISOString().slice(0, 10);
   const handleDelete = (id) => { if (confirm(t.edit.confirmDelete)) store.deleteDay(id); };
+
+  // Scroll to today's card on first render
+  useEffect(() => {
+    const todayDay = store.days.find((d) => d.date === today);
+    if (!todayDay) return;
+    const el = document.getElementById(`day-card-${todayDay.id}`);
+    if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+  }, []);
 
   const activeDay = activeId ? store.days.find((d) => d.id === activeId) : null;
 

@@ -8,6 +8,7 @@ const STATUS_STYLES = {
   booked:      { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' },
   considering: { background: 'var(--c-amber-light)', color: 'var(--c-amber)', border: '1px solid var(--c-amber-mid)' },
   visited:     { background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' },
+  abandoned:   { background: '#f1f5f9', color: '#94a3b8', border: '1px solid #cbd5e1', textDecoration: 'line-through' },
 };
 
 export default function PlacesView({ store, t, isReadOnly }) {
@@ -21,7 +22,7 @@ export default function PlacesView({ store, t, isReadOnly }) {
   const [editPlace, setEditPlace] = useState(null);
   const searchRef = useRef(null);
 
-  const STATUSES = ['all', 'booked', 'considering', 'visited'];
+  const STATUSES = ['all', 'booked', 'considering', 'visited', 'abandoned'];
   const TYPES = ['all', 'hotel', 'attraction', 'restaurant', 'other'];
 
   const allTags = [...new Set(store.places.flatMap((p) => p.tags ?? []))].sort();
@@ -347,7 +348,7 @@ export default function PlacesView({ store, t, isReadOnly }) {
           store={store}
           t={t}
           onClose={() => setViewPlace(null)}
-          onEdit={isReadOnly ? null : () => handleEdit(viewPlace)}
+          isReadOnly={isReadOnly}
         />
       )}
 

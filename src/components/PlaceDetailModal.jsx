@@ -1,15 +1,38 @@
-import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock, Navigation } from 'lucide-react';
+import { useState } from 'react';
+import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock, Navigation, Map } from 'lucide-react';
+import PlaceEditModal from './PlaceEditModal';
 
 const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, other: Star };
 const STATUS_STYLES = {
   booked:      { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' },
   considering: { background: 'var(--c-amber-light)', color: 'var(--c-amber)', border: '1px solid var(--c-amber-mid)' },
   visited:     { background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' },
+  abandoned:   { background: '#f1f5f9', color: '#94a3b8', border: '1px solid #cbd5e1', textDecoration: 'line-through' },
 };
 
-export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
+export default function PlaceDetailModal({ place: initialPlace, store, t, onClose, onEdit, isReadOnly }) {
+  const [editing, setEditing] = useState(false);
+  // Refresh place data from store after edits
+  const place = store.places.find((p) => p.id === initialPlace.id) ?? initialPlace;
+
   const Icon = TYPE_ICONS[place.type] || Star;
   const usedInDays = store.days.filter((d) => d.accommodationId === place.id);
+  const mapsUrl = place.lat && place.lon
+    ? `https://www.google.com/maps?q=${place.lat},${place.lon}`
+    : null;
+
+  const canEdit = !isReadOnly;
+
+  if (editing) {
+    return (
+      <PlaceEditModal
+        place={place}
+        store={store}
+        t={t}
+        onClose={() => setEditing(false)}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -62,18 +85,36 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
             </div>
           )}
 
-          {/* Booking URL */}
-          {place.bookingUrl && (
-            <a
-              href={place.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm hover:underline"
-              style={{ color: 'var(--c-amber)' }}
-            >
-              <ExternalLink size={13} />
-              {t.places.bookingUrl}
-            </a>
+          {/* Links row */}
+          {(place.bookingUrl || mapsUrl) && (
+            <div className="flex items-center gap-3 flex-wrap">
+              {place.bookingUrl && (
+                <a
+                  href={place.bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-sm hover:underline"
+                  style={{ color: 'var(--c-amber)' }}
+                >
+                  <ExternalLink size={13} />
+                  {t.places.bookingUrl}
+                </a>
+              )}
+              {mapsUrl && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-sm hover:underline"
+                  style={{ color: 'var(--c-muted)' }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--c-ink)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
+                >
+                  <Map size={13} />
+                  {store.language === 'he' ? 'פתח במפה' : 'Open in Maps'}
+                </a>
+              )}
+            </div>
           )}
 
           {/* Description */}
@@ -127,10 +168,10 @@ export default function PlaceDetailModal({ place, store, t, onClose, onEdit }) {
           )}
         </div>
 
-        {onEdit && (
-          <div className="flex justify-end p-4" style={{ borderTop: '1px solid var(--c-border)' }}>
+        {canEdit && (
+          <div className="flex justify-end p-4 gap-2" style={{ borderTop: '1px solid var(--c-border)' }}>
             <button
-              onClick={onEdit}
+              onClick={() => setEditing(true)}
               className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors"
               style={{ background: 'var(--c-vellum)', color: 'var(--c-ink)', border: '1px solid var(--c-border)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-ink)'; e.currentTarget.style.color = 'var(--c-vellum)'; }}
