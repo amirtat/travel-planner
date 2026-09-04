@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Check, ChevronLeft, ChevronRight, ImageOff, Link, Upload } from 'lucide-react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
 import { searchWikiImages } from '../wikiImages';
 
-/** Resize image to max 1200px on longest side, returns a Blob (jpeg 85%) */
-async function resizeImage(file, maxDim = 1200) {
-  return new Promise((resolve) => {
+/** Resize + convert to base64 (max 320px, jpeg 75%) — ~15-25KB, safe for Firestore */
+async function imageToBase64(file) {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     const objUrl = URL.createObjectURL(file);
     img.onload = () => {
+      const maxDim = 320;
       const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
@@ -18,8 +17,9 @@ async function resizeImage(file, maxDim = 1200) {
       canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(objUrl);
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
     };
+    img.onerror = reject;
     img.src = objUrl;
   });
 }
@@ -72,18 +72,15 @@ export default function CoverPhotoPicker({ trip, store, onClose }) {
     setSaving(true);
     try {
       if (tab === 'upload' && uploadPreview?.file) {
-        const blob = await resizeImage(uploadPreview.file);
-        const storageRef = ref(storage, `trip-covers/${trip.id}/${Date.now()}.jpg`);
-        await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
-        const downloadUrl = await getDownloadURL(storageRef);
-        await store.setTripCover(trip.id, downloadUrl);
+        const base64 = await imageToBase64(uploadPreview.file);
+        await store.setTripCover(trip.id, base64);
       } else {
         await store.setTripCover(trip.id, current.url);
       }
       onClose();
     } catch (err) {
       console.error(err);
-      setUploadError('שגיאה בהעלאה — נסה שוב');
+      setUploadError('שגיאה — נסה שוב');
     } finally {
       setSaving(false);
     }
