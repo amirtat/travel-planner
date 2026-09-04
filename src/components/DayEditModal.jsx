@@ -1,5 +1,15 @@
 import { useState, useRef } from 'react';
-import { X, Plus, Trash2, GripVertical, MapPin } from 'lucide-react';
+import { X, Plus, Trash2, GripVertical, MapPin, Car, Bus, Train, TramFront, Plane, Ship, Footprints } from 'lucide-react';
+
+const TRANSPORT_MODES = [
+  { id: 'car',    Icon: Car,          color: '#64748b' },
+  { id: 'bus',    Icon: Bus,          color: '#d97706' },
+  { id: 'train',  Icon: Train,        color: '#7c3aed' },
+  { id: 'metro',  Icon: TramFront,    color: '#0891b2' },
+  { id: 'flight', Icon: Plane,        color: '#2563eb' },
+  { id: 'ferry',  Icon: Ship,         color: '#0d9488' },
+  { id: 'walk',   Icon: Footprints,   color: '#16a34a' },
+];
 import {
   DndContext,
   closestCenter,
@@ -76,6 +86,8 @@ export default function DayEditModal({ day, store, t, onClose }) {
     freeCancellation: day?.freeCancellation ?? '',
     items: (day?.items ?? []).map((item) => ({ ...item, _uid: uid() })),
     notes: day?.notes ?? '',
+    transportMode: day?.transportMode ?? '',
+    transportDetails: day?.transportDetails ?? '',
   });
   const [itemInput, setItemInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -126,7 +138,12 @@ export default function DayEditModal({ day, store, t, onClose }) {
   const handleSave = () => {
     if (!form.date) return;
     const cleanItems = form.items.map(({ _uid, ...rest }) => rest);
-    const formData = { ...form, items: cleanItems };
+    const formData = {
+      ...form,
+      items: cleanItems,
+      transportMode: form.transportMode || null,
+      transportDetails: form.transportMode ? form.transportDetails : '',
+    };
     isNew ? store.addDay(formData) : store.updateDay(day.id, formData);
     onClose();
   };
@@ -189,6 +206,59 @@ export default function DayEditModal({ day, store, t, onClose }) {
               className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
               style={inputStyle}
             />
+          </div>
+
+          {/* Transport */}
+          <div>
+            <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.dayEdit.transport}</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {/* None button */}
+              <button
+                type="button"
+                onClick={() => set('transportMode', '')}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={!form.transportMode ? {
+                  background: 'var(--c-ink)', color: 'var(--c-vellum)',
+                } : {
+                  background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)',
+                }}
+              >
+                {t.dayEdit.transportNone}
+              </button>
+              {TRANSPORT_MODES.map(({ id, Icon, color }) => {
+                const isActive = form.transportMode === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => set('transportMode', id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    style={isActive ? {
+                      background: color + '18',
+                      color,
+                      border: `1px solid ${color}55`,
+                    } : {
+                      background: 'var(--c-vellum)',
+                      color: 'var(--c-muted)',
+                      border: '1px solid var(--c-border)',
+                    }}
+                  >
+                    <Icon size={13} />
+                    {t.dayEdit.transportModes[id]}
+                  </button>
+                );
+              })}
+            </div>
+            {form.transportMode && (
+              <input
+                type="text"
+                value={form.transportDetails}
+                onChange={(e) => set('transportDetails', e.target.value)}
+                placeholder={t.dayEdit.transportDetailsPlaceholder}
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                style={inputStyle}
+              />
+            )}
           </div>
 
           {/* Items */}

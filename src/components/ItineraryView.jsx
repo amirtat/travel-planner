@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, ExternalLink, Route, AlertTriangle, Hotel, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Route, AlertTriangle, Hotel, GripVertical, Car, Bus, Train, TramFront, Plane, Ship, Footprints } from 'lucide-react';
+
+const TRANSPORT_CONFIG = {
+  car:    { Icon: Car,        color: '#64748b', labelHe: 'רכב שכור',  labelEn: 'Rental Car' },
+  bus:    { Icon: Bus,        color: '#d97706', labelHe: 'אוטובוס',   labelEn: 'Bus' },
+  train:  { Icon: Train,      color: '#7c3aed', labelHe: 'רכבת',      labelEn: 'Train' },
+  metro:  { Icon: TramFront,  color: '#0891b2', labelHe: 'מטרו',      labelEn: 'Metro' },
+  flight: { Icon: Plane,      color: '#2563eb', labelHe: 'טיסה',      labelEn: 'Flight' },
+  ferry:  { Icon: Ship,       color: '#0d9488', labelHe: 'מעבורת',    labelEn: 'Ferry' },
+  walk:   { Icon: Footprints, color: '#16a34a', labelHe: 'רגלי',      labelEn: 'Walking' },
+};
 import {
   DndContext,
   closestCenter,
@@ -245,6 +255,28 @@ function DayCard({ day, store, t, today, isOver, isDragOverlay, dragHandleProps,
                 )}
               </div>
             </div>
+
+            {/* Transport chip */}
+            {day.transportMode && TRANSPORT_CONFIG[day.transportMode] && (() => {
+              const { Icon, color, labelHe, labelEn } = TRANSPORT_CONFIG[day.transportMode];
+              const label = store.language === 'he' ? labelHe : labelEn;
+              return (
+                <div className="flex items-center gap-1.5 mb-2.5">
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
+                    style={{ background: color + '18', color, border: `1px solid ${color}40` }}
+                  >
+                    <Icon size={11} />
+                    {label}
+                  </span>
+                  {day.transportDetails && (
+                    <span className="text-xs truncate max-w-[200px]" style={{ color: 'var(--c-muted)' }}>
+                      {day.transportDetails}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Place chips */}
             {(day.items || []).length > 0 && (
