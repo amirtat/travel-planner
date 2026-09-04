@@ -7,10 +7,34 @@ const TABS = [
 ];
 
 export default function Header({ store, t, tab, onTabChange, onSettings, onFaq, isReadOnly }) {
+  const coverPhotoUrl = store.coverPhotoUrl;
+
   return (
-    <header style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}
-      className="sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4">
+    <header
+      className="sticky top-0 z-40 overflow-hidden"
+      style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)', position: 'relative' }}
+    >
+      {/* Blurred cover photo strip */}
+      {coverPhotoUrl && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${coverPhotoUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 30%',
+            filter: 'blur(22px)',
+            opacity: 0.28,
+            transform: 'scale(1.15)', // prevent blur edge bleed
+            WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+            maskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      <div className="max-w-7xl mx-auto px-4" style={{ position: 'relative', zIndex: 1 }}>
         <div className="flex items-center justify-between h-14">
 
           {/* Trip name */}

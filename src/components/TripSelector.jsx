@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, ArrowLeft, Download, MapPin, Share2, Check, LogOut, UserCog, Eye } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Download, MapPin, Share2, Check, LogOut, UserCog, Eye, Camera } from 'lucide-react';
+import CoverPhotoPicker from './CoverPhotoPicker';
 
 export default function TripSelector({ store, joinError }) {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [shareMenuId, setShareMenuId] = useState(null);
   const [copiedInfo, setCopiedInfo] = useState(null); // { id, role }
+  const [pickerTrip, setPickerTrip] = useState(null);
   const menuRef = useRef(null);
 
   const legacyData = store.getLegacyData();
@@ -124,12 +126,36 @@ export default function TripSelector({ store, joinError }) {
                   <button
                     key={trip.id}
                     onClick={() => store.switchTrip(trip.id)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl transition-all text-start group"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl transition-all text-start group"
                     style={{ border: '1px solid var(--c-border)' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--c-amber)'; e.currentTarget.style.background = 'var(--c-amber-light)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--c-border)'; e.currentTarget.style.background = ''; }}
                   >
-                    <div className="min-w-0">
+                    {/* Cover photo thumbnail */}
+                    <div
+                      className="relative shrink-0 w-11 h-11 rounded-lg overflow-hidden"
+                      style={{ border: '1px solid var(--c-border)', background: 'var(--c-vellum)' }}
+                      onClick={owner ? (e) => { e.stopPropagation(); setPickerTrip(trip); } : undefined}
+                      title={owner ? 'שנה תמונת כיסוי' : undefined}
+                    >
+                      {trip.coverPhotoUrl ? (
+                        <img src={trip.coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center" style={{ color: 'var(--c-border)' }}>
+                          <Camera size={14} />
+                        </div>
+                      )}
+                      {owner && (
+                        <div
+                          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ background: 'rgba(0,0,0,0.45)' }}
+                        >
+                          <Camera size={12} color="white" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
                       <span className="font-medium text-sm block truncate" style={{ color: 'var(--c-ink)' }}>
                         {trip.name}
                       </span>
@@ -286,6 +312,14 @@ export default function TripSelector({ store, joinError }) {
           </div>
         </div>
       </div>
+
+      {pickerTrip && (
+        <CoverPhotoPicker
+          trip={pickerTrip}
+          store={store}
+          onClose={() => setPickerTrip(null)}
+        />
+      )}
     </div>
   );
 }

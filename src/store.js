@@ -60,6 +60,7 @@ function tripFromDoc(d) {
     members: data.members ?? [],
     guests: data.guests ?? [],
     ownerId: data.ownerId ?? null,
+    coverPhotoUrl: data.coverPhotoUrl ?? null,
   };
 }
 
@@ -381,6 +382,10 @@ export function useTravelStore() {
 
   const clearLegacyData = () => localStorage.removeItem(LEGACY_KEY);
 
+  const setTripCover = useCallback(async (tripId, url) => {
+    await updateDoc(doc(db, 'trips', tripId), { coverPhotoUrl: url ?? null });
+  }, []);
+
   return {
     // Auth
     user,
@@ -410,6 +415,10 @@ export function useTravelStore() {
     joinTripByToken,
     generateGuestToken,
     joinTripAsGuest,
+
+    // Cover photo
+    coverPhotoUrl: trips.find((t) => t.id === activeTripId)?.coverPhotoUrl ?? null,
+    setTripCover,
 
     // Current trip data (spread for backward compat)
     ...(tripData ?? { name: '', language: 'he', days: [], places: [] }),
