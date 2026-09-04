@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Check, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { X, Check, ChevronLeft, ChevronRight, ImageOff, Link } from 'lucide-react';
 import { searchWikiImages } from '../wikiImages';
 
 export default function CoverPhotoPicker({ trip, store, onClose }) {
@@ -7,12 +7,13 @@ export default function CoverPhotoPicker({ trip, store, onClose }) {
   const [idx, setIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [customUrl, setCustomUrl] = useState('');
+  const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     searchWikiImages(trip.name).then((imgs) => {
       setImages(imgs);
-      // If trip already has a cover, start there
       if (trip.coverPhotoUrl) {
         const cur = imgs.findIndex((i) => i.url === trip.coverPhotoUrl);
         if (cur >= 0) setIdx(cur);
@@ -21,10 +22,10 @@ export default function CoverPhotoPicker({ trip, store, onClose }) {
     });
   }, [trip.id]);
 
-  const current = images[idx];
+  const current = showCustom ? (customUrl ? { url: customUrl, title: 'תמונה מקישור' } : null) : images[idx];
 
   const handleAccept = async () => {
-    if (!current) return;
+    if (!current?.url) return;
     setSaving(true);
     await store.setTripCover(trip.id, current.url);
     setSaving(false);
@@ -62,11 +63,53 @@ export default function CoverPhotoPicker({ trip, store, onClose }) {
           </button>
         </div>
 
-        {/* Image */}
-        <div className="relative bg-black" style={{ height: 220 }}>
-          {loading ? (
-            <div className="absolute inset-0 flex items-center justify-center text-sm" style={{ color: 'var(--c-muted)', background: 'var(--c-vellum)' }}>
-              <span className="animate-pulse">מחפש תמונות...</span>
+        {/* Mode toggle */}
+        <div className="flex border-b" style={{ borderColor: 'var(--c-border)' }}>
+          <button
+            onClick={() => setShowCustom(false)}
+            className="flex-1 py-2 text-xs font-medium transition-colors"
+            style={{
+              color: !showCustom ? 'var(--c-amber)' : 'var(--c-muted)',
+              borderBottom: !showCustom ? '2px solid var(--c-amber)' : '2px solid transparent',
+            }}
+          >
+            ויקיפדיה ({loading ? '...' : images.length})
+          </button>
+          <button
+            onClick={() => setShowCustom(true)}
+            className="flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+            style={{
+              color: showCustom ? 'var(--c-amber)' : 'var(--c-muted)',
+              borderBottom: showCustom ? '2px solid var(--c-amber)' : '2px solid transparent',
+            }}
+          >
+            <Link size={11} /> קישור מותאם
+          </button>
+        </div>
+
+        {/* Image area */}
+        <div className="relative bg-black" style={{ height: 200 }}>
+          {showCustom ? (
+            customUrl ? (
+              <img
+                key={customUrl}
+                src={customUrl}
+                alt="תמונה מותאמת"
+                className="w-full h-full object-cover"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            ) : (
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+                style={{ color: 'var(--c-muted)', background: 'var(--c-vellum)' }}
+              >
+                <Link size={24} />
+                <span className="text-xs">הדבק קישור לתמונה למטה</span>
+              </div>
+            )
+          ) : loading ? (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--c-muted)', background: 'var(--c-vellum)' }}>
+              <span className="text-sm animate-pulse">מחפש תמונות...</span>
             </div>
           ) : !current ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color: 'var(--c-muted)', background: 'var(--c-vellum)' }}>
@@ -75,35 +118,24 @@ export default function CoverPhotoPicker({ trip, store, onClose }) {
             </div>
           ) : (
             <>
-              <img
-                key={current.url}
-                src={current.url}
-                alt={current.title}
-                className="w-full h-full object-cover"
-              />
-              {/* Overlay with title + counter */}
-              <div
-                className="absolute bottom-0 inset-x-0 px-3 py-2"
-                style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.6))' }}
-              >
+              <img key={current.url} src={current.url} alt={current.title} className="w-full h-full object-cover" />
+              <div className="absolute bottom-0 inset-x-0 px-3 py-2" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.6))' }}>
                 <p className="text-white text-xs truncate">{current.title}</p>
                 <p className="text-white/50 text-[10px]">{idx + 1} / {images.length}</p>
               </div>
-              {/* Prev */}
               {idx > 0 && (
                 <button
                   onClick={() => setIdx((i) => i - 1)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-opacity hover:opacity-80"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:opacity-80"
                   style={{ background: 'rgba(0,0,0,0.55)', color: 'white' }}
                 >
                   <ChevronLeft size={18} />
                 </button>
               )}
-              {/* Next */}
               {idx < images.length - 1 && (
                 <button
                   onClick={() => setIdx((i) => i + 1)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-opacity hover:opacity-80"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:opacity-80"
                   style={{ background: 'rgba(0,0,0,0.55)', color: 'white' }}
                 >
                   <ChevronRight size={18} />
@@ -113,26 +145,54 @@ export default function CoverPhotoPicker({ trip, store, onClose }) {
           )}
         </div>
 
+        {/* Custom URL input */}
+        {showCustom && (
+          <div className="px-4 pt-3">
+            <input
+              type="url"
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              placeholder="https://example.com/photo.jpg"
+              dir="ltr"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={{
+                background: 'var(--c-vellum)',
+                border: '1px solid var(--c-border)',
+                color: 'var(--c-ink)',
+                '--tw-ring-color': 'var(--c-amber)',
+              }}
+            />
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex items-center gap-2 p-4">
-          {trip.coverPhotoUrl && (
+          {trip.coverPhotoUrl ? (
             <button
               onClick={handleRemove}
               disabled={saving}
               className="text-sm px-3 py-2 rounded-lg transition-colors disabled:opacity-40"
               style={{ background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }}
             >
-              הסר
+              הסר תמונה
+            </button>
+          ) : (
+            <button
+              onClick={onClose}
+              className="text-sm px-3 py-2 rounded-lg transition-colors"
+              style={{ background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }}
+            >
+              ביטול
             </button>
           )}
           <button
             onClick={handleAccept}
-            disabled={!current || saving}
+            disabled={!current?.url || saving}
             className="flex-1 flex items-center justify-center gap-2 text-sm px-3 py-2 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-40"
             style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
           >
             <Check size={14} />
-            {saving ? 'שומר...' : 'בחר תמונה זו'}
+            {saving ? 'שומר...' : 'בחר תמונה'}
           </button>
         </div>
       </div>
