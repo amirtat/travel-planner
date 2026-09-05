@@ -320,7 +320,8 @@ export default function DayEditModal({ day, store, t, onClose }) {
                   style={inputStyle}
                 />
                 <button
-                  onClick={() => addTextItem()}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); clearTimeout(blurTimeout.current); addTextItem(); }}
                   className="p-2 rounded-lg transition-opacity hover:opacity-80"
                   style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
                 >
