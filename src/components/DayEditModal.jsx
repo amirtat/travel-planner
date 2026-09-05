@@ -104,6 +104,7 @@ export default function DayEditModal({ day, store, t, onClose }) {
     transportDetails: day?.transportDetails ?? '',
   });
   const [itemInput, setItemInput] = useState('');
+  const itemInputRef = useRef('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const blurTimeout = useRef(null);
 
@@ -126,9 +127,10 @@ export default function DayEditModal({ day, store, t, onClose }) {
   };
 
   const addTextItem = (text) => {
-    const v = (text ?? itemInput).trim();
+    const v = (text ?? itemInputRef.current).trim();
     if (!v) return;
     set('items', [...form.items, { type: 'text', value: v, _uid: uid() }]);
+    itemInputRef.current = '';
     setItemInput('');
     setShowSuggestions(false);
   };
@@ -308,7 +310,7 @@ export default function DayEditModal({ day, store, t, onClose }) {
                 <input
                   type="text"
                   value={itemInput}
-                  onChange={(e) => { setItemInput(e.target.value); setShowSuggestions(true); }}
+                  onChange={(e) => { itemInputRef.current = e.target.value; setItemInput(e.target.value); setShowSuggestions(true); }}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => { blurTimeout.current = setTimeout(() => setShowSuggestions(false), 150); }}
                   onKeyDown={(e) => {
@@ -321,8 +323,9 @@ export default function DayEditModal({ day, store, t, onClose }) {
                 />
                 <button
                   type="button"
+                  disabled={!itemInput.trim()}
                   onMouseDown={(e) => { e.preventDefault(); clearTimeout(blurTimeout.current); addTextItem(); }}
-                  className="p-2 rounded-lg transition-opacity hover:opacity-80"
+                  className="p-2 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                   style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
                 >
                   <Plus size={16} />
