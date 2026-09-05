@@ -78,8 +78,19 @@ function SortableItem({ item, places, onRemove }) {
 
 export default function DayEditModal({ day, store, t, onClose }) {
   const isNew = !day;
+
+  const defaultDate = (() => {
+    if (!isNew) return day.date;
+    const sorted = [...store.days].sort((a, b) => a.date.localeCompare(b.date));
+    const last = sorted[sorted.length - 1];
+    if (!last?.date) return '';
+    const d = new Date(last.date + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+
   const [form, setForm] = useState({
-    date: day?.date ?? '',
+    date: defaultDate,
     accommodationId: day?.accommodationId ?? '',
     accommodationName: day?.accommodationName ?? '',
     region: day?.region ?? '',
