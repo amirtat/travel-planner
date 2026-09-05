@@ -1,6 +1,12 @@
 import { useState } from 'react';
-import { Car, RotateCw, AlertCircle, Check, ArrowRight, MapPin, Sparkles, Hotel } from 'lucide-react';
+import { Car, Footprints, Bus, RotateCw, AlertCircle, Check, ArrowRight, MapPin, Sparkles, Hotel } from 'lucide-react';
 import { getDistanceMatrix, routeCost } from '../routeApi';
+
+const ROUTE_MODES = [
+  { id: 'car',     Icon: Car,       labelHe: 'רכב',    labelEn: 'Car' },
+  { id: 'walk',    Icon: Footprints, labelHe: 'רגלי',  labelEn: 'Walk' },
+  { id: 'transit', Icon: Bus,       labelHe: 'תחב"צ',  labelEn: 'Transit' },
+];
 
 function formatTime(seconds) {
   if (seconds == null) return '—';
@@ -124,6 +130,7 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
   const [status, setStatus] = useState('idle');
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [routeMode, setRouteMode] = useState('car');
 
   const currentHotel = day.accommodationId
     ? places.find((p) => p.id === day.accommodationId)
@@ -176,7 +183,7 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
     setErrorMsg('');
     try {
       const coords = geocodedNodes.map((n) => ({ lat: n.lat, lon: n.lon }));
-      const { durations, distances } = await getDistanceMatrix(coords);
+      const { durations, distances } = await getDistanceMatrix(coords, routeMode);
       const n = geocodedNodes.length;
 
       const hasStart = startNode && geocodedNodes[0].role === 'start';
@@ -279,42 +286,69 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
       )}
 
       {status === 'idle' && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs flex-wrap" style={{ color: 'var(--c-muted)' }}>
-            {startNode && (
-              <span className="flex items-center gap-1" style={{ color: '#15803d' }}>
-                <Hotel size={11} />
-                מ: {startNode.name.length > 18 ? startNode.name.slice(0, 18) + '…' : startNode.name}
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              <MapPin size={11} style={{ color: 'var(--c-amber)' }} />
-              {middleNodes.length} עצירות
-            </span>
-            {endNode && (
-              <span className="flex items-center gap-1" style={{ color: 'var(--c-amber)' }}>
-                <Hotel size={11} />
-                אל: {endNode.name.length > 18 ? endNode.name.slice(0, 18) + '…' : endNode.name}
-              </span>
-            )}
-            {missingCoords > 0 && (
-              <span className="flex items-center gap-1" style={{ color: 'var(--c-amber)' }}>
-                <AlertCircle size={11} />
-                {missingCoords} ללא מיקום
-              </span>
-            )}
+        <div className="space-y-2">
+          {/* Mode selector */}
+          <div className="flex items-center gap-1">
+            {ROUTE_MODES.map(({ id, Icon, labelHe }) => (
+              <button
+                key={id}
+                onClick={() => { setRouteMode(id); setStatus('idle'); setResult(null); }}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors"
+                style={routeMode === id
+                  ? { background: 'var(--c-ink)', color: 'var(--c-vellum)' }
+                  : { background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }
+                }
+              >
+                <Icon size={11} />
+                {labelHe}
+                {id === 'transit' && <span className="opacity-60 text-[10px]">*</span>}
+              </button>
+            ))}
           </div>
-          <button
-            onClick={calculate}
-            disabled={!canCalculate}
-            className="flex items-center gap-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ color: 'var(--c-amber)' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--c-ink)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--c-amber)'}
-          >
-            <RotateCw size={11} />
-            חשב מסלול מיטבי
-          </button>
+
+          {/* Summary + calculate */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-xs flex-wrap" style={{ color: 'var(--c-muted)' }}>
+              {startNode && (
+                <span className="flex items-center gap-1" style={{ color: '#15803d' }}>
+                  <Hotel size={11} />
+                  מ: {startNode.name.length > 18 ? startNode.name.slice(0, 18) + '…' : startNode.name}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <MapPin size={11} style={{ color: 'var(--c-amber)' }} />
+                {middleNodes.length} עצירות
+              </span>
+              {endNode && (
+                <span className="flex items-center gap-1" style={{ color: 'var(--c-amber)' }}>
+                  <Hotel size={11} />
+                  אל: {endNode.name.length > 18 ? endNode.name.slice(0, 18) + '…' : endNode.name}
+                </span>
+              )}
+              {missingCoords > 0 && (
+                <span className="flex items-center gap-1" style={{ color: 'var(--c-amber)' }}>
+                  <AlertCircle size={11} />
+                  {missingCoords} ללא מיקום
+                </span>
+              )}
+            </div>
+            <button
+              onClick={calculate}
+              disabled={!canCalculate}
+              className="flex items-center gap-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{ color: 'var(--c-amber)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--c-ink)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--c-amber)'}
+            >
+              <RotateCw size={11} />
+              חשב מסלול מיטבי
+            </button>
+          </div>
+          {routeMode === 'transit' && (
+            <p className="text-[10px]" style={{ color: 'var(--c-muted)' }}>
+              * תחב"צ: חישוב על בסיס רשת הדרכים — הערכה בלבד
+            </p>
+          )}
         </div>
       )}
 
@@ -345,12 +379,20 @@ export default function DayInsightsPanel({ day, places, store, prevPlace }) {
           {/* Summary */}
           <div className="flex items-center gap-3 flex-wrap text-xs">
             <div className="flex items-center gap-2 font-medium" style={{ color: 'var(--c-ink)' }}>
-              <span className="flex items-center gap-1">
-                <Car size={12} style={{ color: 'var(--c-amber)' }} />
-                {formatDist(result.totalDistance)}
-              </span>
-              <span style={{ color: 'var(--c-border)' }}>·</span>
-              <span>{formatTime(result.totalDuration)} נסיעה</span>
+              {(() => {
+                const m = ROUTE_MODES.find((m) => m.id === routeMode) ?? ROUTE_MODES[0];
+                const label = routeMode === 'walk' ? 'הליכה' : routeMode === 'transit' ? 'תחב"צ*' : 'נסיעה';
+                return (
+                  <>
+                    <span className="flex items-center gap-1">
+                      <m.Icon size={12} style={{ color: 'var(--c-amber)' }} />
+                      {formatDist(result.totalDistance)}
+                    </span>
+                    <span style={{ color: 'var(--c-border)' }}>·</span>
+                    <span>{formatTime(result.totalDuration)} {label}</span>
+                  </>
+                );
+              })()}
             </div>
 
             {result.isOptimal ? (

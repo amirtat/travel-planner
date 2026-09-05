@@ -37,8 +37,12 @@ const OSRM_ROUTE = {
   bicycle: 'https://routing.openstreetmap.de/routed-bike/route/v1/bike',
 }
 
-// OSRM Table API (driving only)
-const OSRM_TABLE = 'https://router.project-osrm.org/table/v1/driving'
+// OSRM Table API endpoints by mode
+const OSRM_TABLE = {
+  car:     'https://router.project-osrm.org/table/v1/driving',
+  walk:    'https://routing.openstreetmap.de/routed-foot/table/v1/foot',
+  transit: 'https://router.project-osrm.org/table/v1/driving',
+}
 
 /**
  * Reverse geocode coordinates using Photon.
@@ -98,10 +102,11 @@ export async function getRoute(oLat, oLon, dLat, dLon, mode = 'car') {
  * coords: [{ lat, lon }, ...]
  * Returns { durations: number[][], distances: number[][] } in seconds/meters
  */
-export async function getDistanceMatrix(coords) {
+export async function getDistanceMatrix(coords, mode = 'car') {
   if (coords.length < 2) throw new Error('Need at least 2 points')
+  const server = OSRM_TABLE[mode] ?? OSRM_TABLE.car
   const coordStr = coords.map((c) => `${c.lon},${c.lat}`).join(';')
-  const url = `${OSRM_TABLE}/${coordStr}?annotations=duration,distance`
+  const url = `${server}/${coordStr}?annotations=duration,distance`
   const res = await fetch(url)
   if (!res.ok) throw new Error('OSRM table error')
   const data = await res.json()
