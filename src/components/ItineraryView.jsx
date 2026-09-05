@@ -1,15 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, ExternalLink, Route, AlertTriangle, Hotel, GripVertical, Car, Bus, Train, TramFront, Plane, Ship, Footprints } from 'lucide-react';
-
-const TRANSPORT_CONFIG = {
-  car:    { Icon: Car,        color: '#64748b', labelHe: 'רכב שכור',  labelEn: 'Rental Car' },
-  bus:    { Icon: Bus,        color: '#d97706', labelHe: 'אוטובוס',   labelEn: 'Bus' },
-  train:  { Icon: Train,      color: '#7c3aed', labelHe: 'רכבת',      labelEn: 'Train' },
-  metro:  { Icon: TramFront,  color: '#0891b2', labelHe: 'מטרו',      labelEn: 'Metro' },
-  flight: { Icon: Plane,      color: '#2563eb', labelHe: 'טיסה',      labelEn: 'Flight' },
-  ferry:  { Icon: Ship,       color: '#0d9488', labelHe: 'מעבורת',    labelEn: 'Ferry' },
-  walk:   { Icon: Footprints, color: '#16a34a', labelHe: 'רגלי',      labelEn: 'Walking' },
-};
 import {
   DndContext,
   closestCenter,
@@ -27,6 +17,16 @@ import { CSS } from '@dnd-kit/utilities';
 import DayEditModal from './DayEditModal';
 import PlaceDetailModal from './PlaceDetailModal';
 import DayInsightsPanel from './DayInsightsPanel';
+
+const TRANSPORT_CONFIG = {
+  car:    { Icon: Car,        color: '#64748b', labelHe: 'רכב שכור',  labelEn: 'Rental Car' },
+  bus:    { Icon: Bus,        color: '#d97706', labelHe: 'אוטובוס',   labelEn: 'Bus' },
+  train:  { Icon: Train,      color: '#7c3aed', labelHe: 'רכבת',      labelEn: 'Train' },
+  metro:  { Icon: TramFront,  color: '#0891b2', labelHe: 'מטרו',      labelEn: 'Metro' },
+  flight: { Icon: Plane,      color: '#2563eb', labelHe: 'טיסה',      labelEn: 'Flight' },
+  ferry:  { Icon: Ship,       color: '#0d9488', labelHe: 'מעבורת',    labelEn: 'Ferry' },
+  walk:   { Icon: Footprints, color: '#16a34a', labelHe: 'רגלי',      labelEn: 'Walking' },
+};
 
 function formatDate(dateStr, language) {
   if (!dateStr) return '';
