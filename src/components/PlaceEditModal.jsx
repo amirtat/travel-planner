@@ -14,6 +14,7 @@ const labelClass = 'block text-xs font-semibold uppercase tracking-wide mb-1.5';
 export default function PlaceEditModal({ place, store, t, onClose }) {
   const isNew = !place;
   const existingRegions = [...new Set(store.places.map((p) => p.region).filter(Boolean))].sort();
+  const existingTags = [...new Set(store.places.flatMap((p) => p.tags ?? []))].sort();
 
   const [form, setForm] = useState({
     name: place?.name ?? '',
@@ -307,6 +308,7 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
             <div className="flex gap-2 mb-2">
               <input
                 type="text"
+                list="tag-suggestions"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
@@ -314,6 +316,13 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
                 className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
                 style={inputStyle}
               />
+              {existingTags.length > 0 && (
+                <datalist id="tag-suggestions">
+                  {existingTags.filter((tag) => !form.tags.includes(tag)).map((tag) => (
+                    <option key={tag} value={tag} />
+                  ))}
+                </datalist>
+              )}
               <button
                 onClick={addTag}
                 className="p-2 rounded-lg transition-opacity hover:opacity-80"
