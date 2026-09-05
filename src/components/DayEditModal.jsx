@@ -1,15 +1,5 @@
 import { useState, useRef } from 'react';
 import { X, Plus, Trash2, GripVertical, MapPin, Car, Bus, Train, TramFront, Plane, Ship, Footprints } from 'lucide-react';
-
-const TRANSPORT_MODES = [
-  { id: 'car',    Icon: Car,          color: '#64748b' },
-  { id: 'bus',    Icon: Bus,          color: '#d97706' },
-  { id: 'train',  Icon: Train,        color: '#7c3aed' },
-  { id: 'metro',  Icon: TramFront,    color: '#0891b2' },
-  { id: 'flight', Icon: Plane,        color: '#2563eb' },
-  { id: 'ferry',  Icon: Ship,         color: '#0d9488' },
-  { id: 'walk',   Icon: Footprints,   color: '#16a34a' },
-];
 import {
   DndContext,
   closestCenter,
@@ -24,6 +14,16 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+const TRANSPORT_MODES = [
+  { id: 'car',    Icon: Car,          color: '#64748b' },
+  { id: 'bus',    Icon: Bus,          color: '#d97706' },
+  { id: 'train',  Icon: Train,        color: '#7c3aed' },
+  { id: 'metro',  Icon: TramFront,    color: '#0891b2' },
+  { id: 'flight', Icon: Plane,        color: '#2563eb' },
+  { id: 'ferry',  Icon: Ship,         color: '#0d9488' },
+  { id: 'walk',   Icon: Footprints,   color: '#16a34a' },
+];
 
 function uid() { return Math.random().toString(36).slice(2); }
 
