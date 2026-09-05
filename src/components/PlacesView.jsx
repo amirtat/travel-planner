@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { Plus, ExternalLink, Hotel, MapPin, Utensils, Star, Search, X } from 'lucide-react';
+import { Plus, ExternalLink, Hotel, MapPin, Utensils, Star, Search, X, ShoppingBag, Compass } from 'lucide-react';
 import PlaceDetailModal from './PlaceDetailModal';
 import PlaceEditModal from './PlaceEditModal';
 
-const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, other: Star };
+const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, shopping: ShoppingBag, area: Compass, other: Star };
 const STATUS_STYLES = {
   booked:      { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' },
   considering: { background: 'var(--c-amber-light)', color: 'var(--c-amber)', border: '1px solid var(--c-amber-mid)' },
@@ -23,7 +23,7 @@ export default function PlacesView({ store, t, isReadOnly }) {
   const searchRef = useRef(null);
 
   const STATUSES = ['all', 'booked', 'considering', 'visited', 'abandoned'];
-  const TYPES = ['all', 'hotel', 'attraction', 'restaurant', 'other'];
+  const TYPES = ['all', 'hotel', 'attraction', 'restaurant', 'shopping', 'area', 'other'];
 
   const allTags = [...new Set(store.places.flatMap((p) => p.tags ?? []))].sort();
   const allRegions = [...new Set(store.places.map((p) => p.region).filter(Boolean))].sort();

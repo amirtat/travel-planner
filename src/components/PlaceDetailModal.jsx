@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock, Navigation, Map } from 'lucide-react';
+import { X, ExternalLink, Pencil, Hotel, MapPin, Utensils, Star, Calendar, Clock, Navigation, Map, ShoppingBag, Compass } from 'lucide-react';
 import PlaceEditModal from './PlaceEditModal';
 
-const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, other: Star };
+const TYPE_ICONS = { hotel: Hotel, attraction: MapPin, restaurant: Utensils, shopping: ShoppingBag, area: Compass, other: Star };
 const STATUS_STYLES = {
   booked:      { background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' },
   considering: { background: 'var(--c-amber-light)', color: 'var(--c-amber)', border: '1px solid var(--c-amber-mid)' },

@@ -17,7 +17,7 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
 
   const [form, setForm] = useState({
     name: place?.name ?? '',
-    type: place?.type ?? 'hotel',
+    type: place?.type ?? 'attraction',
     status: place?.status ?? 'considering',
     region: place?.region ?? '',
     description: place?.description ?? '',
@@ -151,9 +151,11 @@ export default function PlaceEditModal({ place, store, t, onClose }) {
                 className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
                 style={inputStyle}
               >
-                <option value="hotel">{t.places.hotel}</option>
                 <option value="attraction">{t.places.attraction}</option>
+                <option value="hotel">{t.places.hotel}</option>
                 <option value="restaurant">{t.places.restaurant}</option>
+                <option value="shopping">{t.places.shopping}</option>
+                <option value="area">{t.places.area}</option>
                 <option value="other">{t.places.other}</option>
               </select>
             </div>
