@@ -110,6 +110,10 @@ export default function DayEditModal({ day, store, t, onClose }) {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const hotels = store.places.filter((p) => p.type === 'hotel');
+  const existingRegions = [...new Set([
+    ...store.days.map((d) => d.region),
+    ...store.places.map((p) => p.region),
+  ].filter(Boolean))].sort();
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -216,12 +220,18 @@ export default function DayEditModal({ day, store, t, onClose }) {
             <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.dayEdit.region}</label>
             <input
               type="text"
+              list="day-region-suggestions"
               value={form.region}
               onChange={(e) => set('region', e.target.value)}
               placeholder={t.dayEdit.regionPlaceholder}
               className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
               style={inputStyle}
             />
+            {existingRegions.length > 0 && (
+              <datalist id="day-region-suggestions">
+                {existingRegions.map((r) => <option key={r} value={r} />)}
+              </datalist>
+            )}
           </div>
 
           {/* Transport */}
