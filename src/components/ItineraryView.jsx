@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, ExternalLink, Route, AlertTriangle, Hotel, GripVertical, Car, Bus, Train, TramFront, Plane, Ship, Footprints } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Route, AlertTriangle, Hotel, GripVertical, Car, Bus, Train, TramFront, Plane, Ship, Footprints, FileDown } from 'lucide-react';
+import { printItinerary } from '../printItinerary';
 import {
   DndContext,
   closestCenter,
@@ -416,16 +417,29 @@ export default function ItineraryView({ store, t, isReadOnly }) {
         <h2 className="text-2xl" style={{ fontFamily: 'var(--font-display)', color: 'var(--c-ink)' }}>
           {t.itinerary.title}
         </h2>
-        {!isReadOnly && (
-          <button
-            onClick={() => setEditDay('new')}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
-          >
-            <Plus size={14} />
-            {t.itinerary.addDay}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {store.days.length > 0 && (
+            <button
+              onClick={() => printItinerary(store)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ background: 'var(--c-vellum)', color: 'var(--c-ink)', border: '1px solid var(--c-border)' }}
+              title={store.language === 'he' ? 'ייצוא PDF' : 'Export PDF'}
+            >
+              <FileDown size={14} />
+              PDF
+            </button>
+          )}
+          {!isReadOnly && (
+            <button
+              onClick={() => setEditDay('new')}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ background: 'var(--c-ink)', color: 'var(--c-vellum)' }}
+            >
+              <Plus size={14} />
+              {t.itinerary.addDay}
+            </button>
+          )}
+        </div>
       </div>
 
       {store.days.length === 0 ? (
