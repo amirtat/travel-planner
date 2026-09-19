@@ -256,24 +256,27 @@ function DayCard({ day, store, t, today, isOver, isDragOverlay, dragHandleProps,
               </div>
             </div>
 
-            {/* Transport chip */}
-            {day.transportMode && TRANSPORT_CONFIG[day.transportMode] && (() => {
-              const { Icon, color, labelHe, labelEn } = TRANSPORT_CONFIG[day.transportMode];
-              const label = store.language === 'he' ? labelHe : labelEn;
+            {/* Transport chips */}
+            {(() => {
+              const entries = day.transports?.length
+                ? day.transports
+                : day.transportMode ? [{ mode: day.transportMode, details: day.transportDetails }] : [];
+              if (!entries.length) return null;
               return (
-                <div className="flex items-center gap-1.5 mb-2.5">
-                  <span
-                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
-                    style={{ background: color + '18', color, border: `1px solid ${color}40` }}
-                  >
-                    <Icon size={11} />
-                    {label}
-                  </span>
-                  {day.transportDetails && (
-                    <span className="text-xs truncate max-w-[200px]" style={{ color: 'var(--c-muted)' }}>
-                      {day.transportDetails}
-                    </span>
-                  )}
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {entries.map((tr, i) => {
+                    const cfg = TRANSPORT_CONFIG[tr.mode];
+                    if (!cfg) return null;
+                    const { Icon, color, labelHe, labelEn } = cfg;
+                    return (
+                      <span key={i} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
+                        style={{ background: color + '18', color, border: `1px solid ${color}40` }}>
+                        <Icon size={11} />
+                        {store.language === 'he' ? labelHe : labelEn}
+                        {tr.details && <span className="opacity-70">· {tr.details}</span>}
+                      </span>
+                    );
+                  })}
                 </div>
               );
             })()}

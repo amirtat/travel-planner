@@ -34,17 +34,32 @@ function sortDays(days) {
 }
 
 function migrateDay(day) {
-  if (day.items !== undefined) return day;
-  const items = [
-    ...(day.stops ?? []).map((id) => ({ type: 'place', id })),
-    ...(day.activities ?? []).map((value) => ({ type: 'text', value })),
-  ];
-  const { activities, stops, ...rest } = day;
-  return { ...rest, items };
+  let d = day;
+  // Migrate old stops/activities → items array
+  if (d.items === undefined) {
+    const items = [
+      ...(d.stops ?? []).map((id) => ({ type: 'place', id })),
+      ...(d.activities ?? []).map((value) => ({ type: 'text', value })),
+    ];
+    const { activities, stops, ...rest } = d;
+    d = { ...rest, items };
+  }
+  // Migrate old transportMode/transportDetails → transports array
+  if (d.transports === undefined) {
+    const { transportMode, transportDetails, ...rest } = d;
+    d = {
+      ...rest,
+      transports: transportMode ? [{ mode: transportMode, details: transportDetails ?? '' }] : [],
+    };
+  }
+  return d;
 }
 
 function migrateData(data) {
-  if (!data.days?.some((d) => d.items === undefined)) return data;
+  const needsMigration = data.days?.some(
+    (d) => d.items === undefined || d.transports === undefined
+  );
+  if (!needsMigration) return data;
   return { ...data, days: data.days.map(migrateDay) };
 }
 
@@ -311,7 +326,7 @@ export function useTravelStore() {
     updateTripData({ ...tripData, days: tripData.days.filter((d) => d.id !== id) });
   };
 
-  const CONTENT_FIELDS = ['items', 'accommodationId', 'accommodationName', 'region', 'notes', 'freeCancellation'];
+  const CONTENT_FIELDS = ['items', 'accommodationId', 'accommodationName', 'region', 'notes', 'freeCancellation', 'transports'];
   const swapDayContent = (id1, id2) => {
     const d1 = tripData.days.find((d) => d.id === id1);
     const d2 = tripData.days.find((d) => d.id === id2);

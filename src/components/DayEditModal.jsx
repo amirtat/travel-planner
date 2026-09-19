@@ -100,8 +100,7 @@ export default function DayEditModal({ day, store, t, onClose }) {
     freeCancellation: day?.freeCancellation ?? '',
     items: (day?.items ?? []).map((item) => ({ ...item, _uid: uid() })),
     notes: day?.notes ?? '',
-    transportMode: day?.transportMode ?? '',
-    transportDetails: day?.transportDetails ?? '',
+    transports: day?.transports ?? (day?.transportMode ? [{ mode: day.transportMode, details: day.transportDetails ?? '' }] : []),
   });
   const [itemInput, setItemInput] = useState('');
   const itemInputRef = useRef('');
@@ -161,8 +160,7 @@ export default function DayEditModal({ day, store, t, onClose }) {
     const formData = {
       ...form,
       items: cleanItems,
-      transportMode: form.transportMode || null,
-      transportDetails: form.transportMode ? form.transportDetails : '',
+      transports: form.transports.filter((tr) => tr.mode),
     };
     isNew ? store.addDay(formData) : store.updateDay(day.id, formData);
     onClose();
@@ -237,54 +235,56 @@ export default function DayEditModal({ day, store, t, onClose }) {
           {/* Transport */}
           <div>
             <label className={labelClass} style={{ color: 'var(--c-muted)' }}>{t.dayEdit.transport}</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {/* None button */}
-              <button
-                type="button"
-                onClick={() => set('transportMode', '')}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                style={!form.transportMode ? {
-                  background: 'var(--c-ink)', color: 'var(--c-vellum)',
-                } : {
-                  background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)',
-                }}
-              >
-                {t.dayEdit.transportNone}
-              </button>
-              {TRANSPORT_MODES.map(({ id, Icon, color }) => {
-                const isActive = form.transportMode === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => set('transportMode', id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                    style={isActive ? {
-                      background: color + '18',
-                      color,
-                      border: `1px solid ${color}55`,
-                    } : {
-                      background: 'var(--c-vellum)',
-                      color: 'var(--c-muted)',
-                      border: '1px solid var(--c-border)',
-                    }}
-                  >
-                    <Icon size={13} />
-                    {t.dayEdit.transportModes[id]}
-                  </button>
-                );
-              })}
-            </div>
-            {form.transportMode && (
-              <input
-                type="text"
-                value={form.transportDetails}
-                onChange={(e) => set('transportDetails', e.target.value)}
-                placeholder={t.dayEdit.transportDetailsPlaceholder}
-                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                style={inputStyle}
-              />
-            )}
+
+            {/* Existing transport entries */}
+            {form.transports.map((tr, idx) => {
+              const cfg = TRANSPORT_MODES.find((m) => m.id === tr.mode);
+              return (
+                <div key={idx} className="mb-2 rounded-lg p-2.5" style={{ background: 'var(--c-vellum)', border: '1px solid var(--c-border)' }}>
+                  {/* Mode selector row */}
+                  <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                    {TRANSPORT_MODES.map(({ id, Icon, color }) => {
+                      const isActive = tr.mode === id;
+                      return (
+                        <button key={id} type="button"
+                          onClick={() => set('transports', form.transports.map((t, i) => i === idx ? { ...t, mode: id } : t))}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+                          style={isActive ? { background: color + '20', color, border: `1px solid ${color}55` }
+                            : { background: 'var(--c-surface)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }}>
+                          <Icon size={12} />
+                          {t.dayEdit.transportModes[id]}
+                        </button>
+                      );
+                    })}
+                    <button type="button"
+                      onClick={() => set('transports', form.transports.filter((_, i) => i !== idx))}
+                      className="ms-auto p-1 rounded transition-colors"
+                      style={{ color: 'var(--c-muted)' }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                  {/* Details input */}
+                  <input type="text"
+                    value={tr.details}
+                    onChange={(e) => set('transports', form.transports.map((t, i) => i === idx ? { ...t, details: e.target.value } : t))}
+                    placeholder={t.dayEdit.transportDetailsPlaceholder}
+                    className="w-full rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2"
+                    style={inputStyle}
+                  />
+                </div>
+              );
+            })}
+
+            {/* Add transport button */}
+            <button type="button"
+              onClick={() => set('transports', [...form.transports, { mode: 'car', details: '' }])}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-70"
+              style={{ background: 'var(--c-vellum)', color: 'var(--c-muted)', border: '1px solid var(--c-border)' }}>
+              <Plus size={12} />
+              {store.language === 'he' ? 'הוסף אמצעי תחבורה' : 'Add transport'}
+            </button>
           </div>
 
           {/* Items */}
